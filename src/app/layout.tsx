@@ -1,10 +1,10 @@
 import { ClerkProvider } from "@clerk/nextjs";
-import type { Metadata } from "next";
 import { Fredoka, Nunito } from "next/font/google";
 import { GuestScanSync } from "@/components/guest-scan-sync";
 import { Providers } from "@/components/providers";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { siteMetadata } from "@/lib/site-metadata";
 import "./globals.css";
 
 const display = Fredoka({
@@ -19,11 +19,7 @@ const body = Nunito({
   weight: ["500", "600", "700", "800"],
 });
 
-export const metadata: Metadata = {
-  title: "Slopcheck — Is your UI AI slop?",
-  description:
-    "Paste a URL. We score whether your website UI looks like AI slop — and help you fix it.",
-};
+export const metadata = siteMetadata;
 
 export default function RootLayout({
   children,
