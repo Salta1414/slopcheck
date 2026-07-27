@@ -400,25 +400,36 @@ body::before {
   display: none !important;
 }
 
-/* Account / UserProfile modal */
+/* Account / UserProfile modal — clip corners so sidebar matches radius */
+.cl-slop-profile-root,
+.cl-userProfile-root {
+  --cl-profile-radius: 1.75rem;
+}
+
 .cl-slop-profile-card-box,
 .cl-userProfile-root .cl-cardBox {
-  border-radius: 1.75rem !important;
+  border-radius: var(--cl-profile-radius) !important;
+  overflow: hidden !important;
+  background: #fff !important;
 }
 
 .cl-slop-profile-card,
 .cl-userProfile-root .cl-card {
   border: 3px solid var(--ink) !important;
-  border-radius: 1.75rem !important;
+  border-radius: var(--cl-profile-radius) !important;
   background: #fff !important;
   box-shadow: 6px 8px 0 var(--ink) !important;
   overflow: hidden !important;
 }
 
 .cl-slop-navbar,
-.cl-navbar {
+.cl-userProfile-root .cl-navbar {
   background: var(--bg) !important;
   border-right: 3px solid var(--ink) !important;
+  border-top-left-radius: calc(var(--cl-profile-radius) - 3px) !important;
+  border-bottom-left-radius: calc(var(--cl-profile-radius) - 3px) !important;
+  overflow: hidden !important;
+  align-self: stretch !important;
 }
 
 .cl-navbarButton[data-active="true"],
@@ -430,8 +441,18 @@ body::before {
 }
 
 .cl-slop-scroll,
-.cl-scrollBox {
+.cl-userProfile-root .cl-scrollBox {
   background: #fff !important;
+  border-top-right-radius: calc(var(--cl-profile-radius) - 3px) !important;
+  border-bottom-right-radius: calc(var(--cl-profile-radius) - 3px) !important;
+  overflow: hidden !important;
+}
+
+/* Kill leftover Clerk footer / dark corner bleed inside profile */
+.cl-userProfile-root .cl-footer,
+.cl-userProfile-root .cl-navbar + .cl-footer,
+.cl-userProfile-root [class*="cl-footer"] {
+  display: none !important;
 }
 
 .cl-slop-badge,
