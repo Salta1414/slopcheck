@@ -70,8 +70,9 @@ export const clerkAppearance = {
       userButtonPopoverMain: "!bg-transparent",
       userButtonPopoverActions: "!gap-1 !p-1",
       userButtonPopoverActionButton:
-        "cl-slop-menu-item !font-extrabold !text-[var(--ink)]",
-      userButtonPopoverActionButtonIconBox: "!text-[var(--ink)]",
+        "cl-slop-menu-item !font-extrabold !text-[var(--ink)] !bg-transparent hover:!bg-[var(--accent)] hover:!text-[var(--ink)]",
+      userButtonPopoverActionButtonIconBox:
+        "!text-[var(--ink)] !bg-transparent",
       userButtonPopoverActionButtonIcon: "!text-[var(--ink)]",
       userButtonPopoverFooter: "!hidden",
       userPreviewMainIdentifier:

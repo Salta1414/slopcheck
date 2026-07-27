@@ -386,13 +386,38 @@ body::before {
   border-radius: 1rem !important;
   border: 3px solid transparent !important;
   min-height: 2.6rem !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--ink) !important;
 }
 
 .cl-slop-menu-item:hover,
-.cl-userButtonPopoverActionButton:hover {
+.cl-slop-menu-item:focus,
+.cl-slop-menu-item:focus-visible,
+.cl-userButtonPopoverActionButton:hover,
+.cl-userButtonPopoverActionButton:focus,
+.cl-userButtonPopoverActionButton:focus-visible,
+.cl-userButtonPopoverActionButton[data-active="true"] {
   background: var(--accent) !important;
   border-color: var(--ink) !important;
   box-shadow: 2px 2px 0 var(--ink) !important;
+  color: var(--ink) !important;
+  opacity: 1 !important;
+}
+
+.cl-userButtonPopoverActionButton:hover .cl-userButtonPopoverActionButtonIcon,
+.cl-userButtonPopoverActionButton:hover .cl-userButtonPopoverActionButtonIconBox,
+.cl-userButtonPopoverActionButton:focus .cl-userButtonPopoverActionButtonIcon {
+  color: var(--ink) !important;
+  background: transparent !important;
+}
+
+/* Kill Clerk’s default dark hover wash */
+.cl-userButtonPopoverActionButton::after,
+.cl-userButtonPopoverActionButton::before {
+  display: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
 }
 
 .cl-userButtonPopoverFooter,
