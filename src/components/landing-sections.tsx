@@ -129,7 +129,7 @@ export function LandingSections() {
           </h2>
           <span
             aria-hidden
-            className="animate-wiggle inline-block rounded-full border-[3px] border-[var(--ink)] bg-[var(--accent-3)] px-3 py-1 text-xs font-black uppercase tracking-wide shadow-[3px_3px_0_var(--ink)]"
+            className="shrink-0 rounded-full border-[3px] border-[var(--ink)] bg-[var(--accent-3)] px-3 py-1 text-xs font-black uppercase tracking-wide shadow-[3px_3px_0_var(--ink)]"
           >
             3 panels · no filler
           </span>

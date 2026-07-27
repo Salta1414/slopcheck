@@ -118,12 +118,6 @@ export function HeroScanner() {
         aria-hidden
         className="animate-blob-bounce-delayed pointer-events-none absolute right-24 top-48 hidden h-28 w-40 -rotate-6 rounded-[2rem] border-[3px] border-[var(--ink)] bg-[var(--accent-2)]/70 shadow-[5px_5px_0_var(--ink)] lg:block"
       />
-      <div
-        aria-hidden
-        className="animate-wiggle pointer-events-none absolute right-8 top-[22rem] hidden rounded-2xl border-[3px] border-[var(--ink)] bg-[var(--accent-3)] px-3 py-2 text-xs font-black uppercase tracking-wide shadow-[4px_4px_0_var(--ink)] lg:block"
-      >
-        sniff sniff
-      </div>
     </section>
   );
 }
