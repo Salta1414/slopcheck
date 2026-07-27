@@ -47,8 +47,9 @@ export const clerkAppearance = {
     formFieldLabel: "!font-extrabold !text-[var(--ink)]",
     formFieldInput: "cl-slop-input !font-semibold !text-[var(--ink)]",
     formButtonPrimary: "cl-slop-btn-primary !font-black !text-[var(--ink)]",
-    footerActionLink:
-      "!font-extrabold !text-[var(--accent-2)] hover:!text-[var(--ink)]",
+    // Hide Clerk footer: switch link + "Secured by Clerk"
+    footer: "!hidden",
+    footerAction: "!hidden",
     identityPreviewEditButton: "!font-bold",
     formFieldInputShowPasswordButton: "!text-[var(--ink)]",
     dividerLine: "!bg-[var(--ink)]/15",
