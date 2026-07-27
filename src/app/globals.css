@@ -127,3 +127,67 @@ body::before {
   animation: blob-bounce 3.4s ease-in-out infinite;
   animation-delay: 0.6s;
 }
+
+/* Clerk modal / auth — comic sticker chrome */
+.cl-slop-card-box {
+  border-radius: 1.75rem !important;
+}
+
+.cl-slop-card {
+  border: 3px solid var(--ink) !important;
+  border-radius: 1.75rem !important;
+  background: #fff !important;
+  box-shadow: 5px 6px 0 var(--ink) !important;
+}
+
+.cl-slop-input {
+  min-height: 3rem !important;
+  border: 3px solid var(--ink) !important;
+  border-radius: 1.1rem !important;
+  box-shadow: 3px 3px 0 var(--ink) !important;
+  background: var(--bg) !important;
+}
+
+.cl-slop-input:focus,
+.cl-slop-input:focus-visible {
+  outline: none !important;
+  box-shadow:
+    3px 3px 0 var(--ink),
+    0 0 0 4px rgb(46 230 166 / 0.45) !important;
+}
+
+.cl-slop-btn-primary {
+  min-height: 3rem !important;
+  border: 3px solid var(--ink) !important;
+  border-radius: 1.1rem !important;
+  background: var(--accent) !important;
+  box-shadow: 3px 4px 0 var(--ink) !important;
+  transition:
+    transform 120ms ease,
+    box-shadow 120ms ease !important;
+}
+
+.cl-slop-btn-primary:hover {
+  transform: translateY(1px);
+  box-shadow: 2px 2px 0 var(--ink) !important;
+}
+
+.cl-slop-btn-secondary {
+  min-height: 2.75rem !important;
+  border: 3px solid var(--ink) !important;
+  border-radius: 1.1rem !important;
+  background: white !important;
+  box-shadow: 3px 3px 0 var(--ink) !important;
+}
+
+.cl-slop-close {
+  border: 3px solid var(--ink) !important;
+  border-radius: 999px !important;
+  box-shadow: 2px 2px 0 var(--ink) !important;
+}
+
+.cl-slop-logo img {
+  border-radius: 1rem !important;
+  border: 3px solid var(--ink);
+  box-shadow: 3px 3px 0 var(--ink);
+}

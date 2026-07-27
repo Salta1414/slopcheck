@@ -4,6 +4,7 @@ import { GuestScanSync } from "@/components/guest-scan-sync";
 import { Providers } from "@/components/providers";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { clerkAppearance } from "@/lib/clerk-appearance";
 import { siteMetadata } from "@/lib/site-metadata";
 import "./globals.css";
 
@@ -29,16 +30,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${display.variable} ${body.variable} min-h-full`}>
       <body className="min-h-full antialiased">
-        <ClerkProvider
-          appearance={{
-            variables: {
-              colorPrimary: "#2EE6A6",
-              colorDanger: "#FF5A7A",
-              borderRadius: "1.5rem",
-              fontFamily: "var(--font-display), system-ui, sans-serif",
-            },
-          }}
-        >
+        <ClerkProvider appearance={clerkAppearance}>
           <Providers>
             <GuestScanSync />
             <div className="relative z-0 flex min-h-full flex-col">
