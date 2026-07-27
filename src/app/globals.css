@@ -400,7 +400,7 @@ body::before {
   display: none !important;
 }
 
-/* Account / UserProfile modal — clip corners so sidebar matches radius */
+/* Account / UserProfile modal — flush panels, no middle divider bleed */
 .cl-slop-profile-root,
 .cl-userProfile-root {
   --cl-profile-radius: 1.75rem;
@@ -425,7 +425,8 @@ body::before {
 .cl-slop-navbar,
 .cl-userProfile-root .cl-navbar {
   background: var(--bg) !important;
-  border-right: 3px solid var(--ink) !important;
+  border-right: none !important;
+  border-radius: 0 !important;
   border-top-left-radius: calc(var(--cl-profile-radius) - 3px) !important;
   border-bottom-left-radius: calc(var(--cl-profile-radius) - 3px) !important;
   overflow: hidden !important;
@@ -443,9 +444,11 @@ body::before {
 .cl-slop-scroll,
 .cl-userProfile-root .cl-scrollBox {
   background: #fff !important;
+  border-radius: 0 !important;
   border-top-right-radius: calc(var(--cl-profile-radius) - 3px) !important;
   border-bottom-right-radius: calc(var(--cl-profile-radius) - 3px) !important;
   overflow: hidden !important;
+  border-left: none !important;
 }
 
 /* Kill leftover Clerk footer / dark corner bleed inside profile */
