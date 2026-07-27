@@ -183,9 +183,14 @@ function ScanList({ onStartNew }: { onStartNew: () => void }) {
 
           return (
             <li key={scan._id}>
-              <Link
-                href={`/scans/${scan._id}`}
-                className="goof-card flex flex-wrap items-center justify-between gap-3 rounded-[1.5rem] border-[3px] border-[var(--ink)] bg-white px-4 py-4 shadow-[3px_4px_0_var(--ink)]"
+            <Link
+              href={`/scans/${scan._id}`}
+              className="goof-hit block"
+            >
+              <div
+                className={`goof-face flex flex-wrap items-center justify-between gap-3 rounded-[1.5rem] border-[3px] border-[var(--ink)] bg-white px-4 py-4 shadow-[3px_4px_0_var(--ink)] ${
+                  inProgress ? "" : ""
+                }`}
               >
                 <div className="min-w-0">
                   <p className="truncate font-extrabold text-[var(--ink)]">
@@ -202,7 +207,8 @@ function ScanList({ onStartNew }: { onStartNew: () => void }) {
                 >
                   {scan.score ?? scan.estimatedScore ?? "—"}
                 </span>
-              </Link>
+              </div>
+            </Link>
             </li>
           );
         })}

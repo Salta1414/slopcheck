@@ -137,9 +137,9 @@ export function LandingSections() {
 
         <div className="grid gap-5 md:grid-cols-3">
           {STEPS.map((step) => (
-            <div key={step.n} className="land-panel">
+            <div key={step.n} className="land-panel goof-hit">
               <article
-                className="goof-card relative rounded-[2rem] border-[3px] border-[var(--ink)] bg-white p-5 shadow-[5px_6px_0_var(--ink)]"
+                className="goof-face relative rounded-[2rem] border-[3px] border-[var(--ink)] bg-white p-5 shadow-[5px_6px_0_var(--ink)]"
                 style={{ ["--tilt" as string]: step.rot }}
               >
                 <span
@@ -177,16 +177,15 @@ export function LandingSections() {
 
         <div className="mt-8 flex flex-wrap justify-center gap-4 sm:justify-start">
           {SNIFFS.map((item) => (
-            <div
-              key={item.label}
-              className="land-stamp goof-stamp relative w-[9.5rem] rounded-[1.4rem] border-[3px] border-[var(--ink)] bg-white px-3 py-4 text-center shadow-[4px_5px_0_var(--ink)] sm:w-40"
-            >
-              <span className="goof-stamp-tag absolute -top-2 right-2 rotate-6 rounded-md border-[2px] border-[var(--ink)] bg-[var(--accent-2)] px-1.5 py-0.5 text-[10px] font-black tracking-wide text-white">
-                {item.stamp}
-              </span>
-              <p className="font-[family-name:var(--font-display)] text-sm font-extrabold leading-snug text-[var(--ink)]">
-                {item.label}
-              </p>
+            <div key={item.label} className="land-stamp goof-stamp w-[9.5rem] sm:w-40">
+              <div className="goof-face relative rounded-[1.4rem] border-[3px] border-[var(--ink)] bg-white px-3 py-4 text-center shadow-[4px_5px_0_var(--ink)]">
+                <span className="goof-stamp-tag absolute -top-2 right-2 rotate-6 rounded-md border-[2px] border-[var(--ink)] bg-[var(--accent-2)] px-1.5 py-0.5 text-[10px] font-black tracking-wide text-white">
+                  {item.stamp}
+                </span>
+                <p className="font-[family-name:var(--font-display)] text-sm font-extrabold leading-snug text-[var(--ink)]">
+                  {item.label}
+                </p>
+              </div>
             </div>
           ))}
         </div>
