@@ -139,11 +139,11 @@ export function LandingSections() {
           {STEPS.map((step) => (
             <div key={step.n} className="land-panel">
               <article
-                className="relative rounded-[2rem] border-[3px] border-[var(--ink)] bg-white p-5 shadow-[5px_6px_0_var(--ink)]"
-                style={{ transform: `rotate(${step.rot})` }}
+                className="goof-card relative rounded-[2rem] border-[3px] border-[var(--ink)] bg-white p-5 shadow-[5px_6px_0_var(--ink)]"
+                style={{ ["--tilt" as string]: step.rot }}
               >
                 <span
-                  className="absolute -top-3 -left-2 grid h-12 w-12 place-items-center rounded-full border-[3px] border-[var(--ink)] font-[family-name:var(--font-display)] text-sm font-black shadow-[3px_3px_0_var(--ink)]"
+                  className="goof-badge absolute -top-3 -left-2 grid h-12 w-12 place-items-center rounded-full border-[3px] border-[var(--ink)] font-[family-name:var(--font-display)] text-sm font-black shadow-[3px_3px_0_var(--ink)]"
                   style={{ background: step.bg }}
                 >
                   {step.n}
@@ -179,9 +179,9 @@ export function LandingSections() {
           {SNIFFS.map((item) => (
             <div
               key={item.label}
-              className="land-stamp relative w-[9.5rem] rounded-[1.4rem] border-[3px] border-[var(--ink)] bg-white px-3 py-4 text-center shadow-[4px_5px_0_var(--ink)] sm:w-40"
+              className="land-stamp goof-stamp relative w-[9.5rem] rounded-[1.4rem] border-[3px] border-[var(--ink)] bg-white px-3 py-4 text-center shadow-[4px_5px_0_var(--ink)] sm:w-40"
             >
-              <span className="absolute -top-2 right-2 rotate-6 rounded-md border-[2px] border-[var(--ink)] bg-[var(--accent-2)] px-1.5 py-0.5 text-[10px] font-black tracking-wide text-white">
+              <span className="goof-stamp-tag absolute -top-2 right-2 rotate-6 rounded-md border-[2px] border-[var(--ink)] bg-[var(--accent-2)] px-1.5 py-0.5 text-[10px] font-black tracking-wide text-white">
                 {item.stamp}
               </span>
               <p className="font-[family-name:var(--font-display)] text-sm font-extrabold leading-snug text-[var(--ink)]">
@@ -194,7 +194,7 @@ export function LandingSections() {
 
       {/* Price punch */}
       <section className="mx-auto w-full max-w-6xl px-4 pb-20 sm:px-6">
-        <div className="land-price relative overflow-hidden rounded-[2.25rem] border-[3px] border-[var(--ink)] bg-[var(--accent)] px-6 py-10 shadow-[6px_8px_0_var(--ink)] sm:px-10">
+        <div className="land-price goof-price relative overflow-hidden rounded-[2.25rem] border-[3px] border-[var(--ink)] bg-[var(--accent)] px-6 py-10 shadow-[6px_8px_0_var(--ink)] sm:px-10">
           <div
             aria-hidden
             className="animate-float-slow pointer-events-none absolute -right-6 -top-8 h-36 w-36 rounded-[40%] border-[3px] border-[var(--ink)] bg-[var(--accent-3)]/80"
@@ -235,14 +235,14 @@ export function LandingSections() {
           {FAQS.map((item) => (
             <details
               key={item.q}
-              className="land-faq group rounded-[1.6rem] border-[3px] border-[var(--ink)] bg-white p-5 shadow-[4px_5px_0_var(--ink)] open:bg-[var(--bg)]"
+              className="land-faq goof-faq group rounded-[1.6rem] border-[3px] border-[var(--ink)] bg-white p-5 shadow-[4px_5px_0_var(--ink)] open:bg-[var(--bg)]"
             >
               <summary className="cursor-pointer list-none font-[family-name:var(--font-display)] text-lg font-extrabold text-[var(--ink)] marker:content-none [&::-webkit-details-marker]:hidden">
                 <span className="flex items-start justify-between gap-3">
                   {item.q}
                   <span
                     aria-hidden
-                    className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full border-[3px] border-[var(--ink)] bg-[var(--accent-3)] text-lg font-black transition group-open:rotate-45"
+                    className="goof-plus mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full border-[3px] border-[var(--ink)] bg-[var(--accent-3)] text-lg font-black transition group-open:rotate-45"
                   >
                     +
                   </span>

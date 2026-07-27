@@ -185,7 +185,7 @@ function ScanList({ onStartNew }: { onStartNew: () => void }) {
             <li key={scan._id}>
               <Link
                 href={`/scans/${scan._id}`}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-[1.5rem] border-[3px] border-[var(--ink)] bg-white px-4 py-4 shadow-[3px_4px_0_var(--ink)] transition hover:translate-y-[1px] hover:shadow-[2px_2px_0_var(--ink)]"
+                className="goof-card flex flex-wrap items-center justify-between gap-3 rounded-[1.5rem] border-[3px] border-[var(--ink)] bg-white px-4 py-4 shadow-[3px_4px_0_var(--ink)]"
               >
                 <div className="min-w-0">
                   <p className="truncate font-extrabold text-[var(--ink)]">
