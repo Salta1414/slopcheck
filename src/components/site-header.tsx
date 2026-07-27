@@ -7,6 +7,7 @@ import {
   UserButton,
 } from "@clerk/nextjs";
 import Image from "next/image";
+import { clerkAppearance } from "@/lib/clerk-appearance";
 
 export function SiteHeader() {
   return (
@@ -55,7 +56,10 @@ export function SiteHeader() {
           </SignUpButton>
         </Show>
         <Show when="signed-in">
-          <UserButton />
+          <UserButton
+            appearance={clerkAppearance}
+            userProfileProps={{ appearance: clerkAppearance }}
+          />
         </Show>
       </nav>
     </header>

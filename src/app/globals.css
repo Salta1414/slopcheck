@@ -338,3 +338,118 @@ body::before {
 .cl-footer {
   display: none !important;
 }
+
+/* UserButton avatar — comic sticker */
+.cl-slop-user-root {
+  display: flex;
+  align-items: center;
+}
+
+.cl-slop-user-trigger {
+  border-radius: 999px !important;
+  outline: none !important;
+}
+
+.cl-slop-avatar,
+.cl-userButtonAvatarBox,
+.cl-avatarBox {
+  width: 2.65rem !important;
+  height: 2.65rem !important;
+  border: 3px solid var(--ink) !important;
+  box-shadow: 3px 3px 0 var(--ink) !important;
+  border-radius: 999px !important;
+  overflow: hidden !important;
+}
+
+.cl-slop-user-trigger:hover .cl-slop-avatar {
+  transform: translateY(1px);
+  box-shadow: 2px 2px 0 var(--ink) !important;
+}
+
+/* UserButton dropdown */
+.cl-slop-popover-root {
+  margin-top: 0.65rem !important;
+  z-index: 60 !important;
+}
+
+.cl-slop-popover,
+.cl-userButtonPopoverCard {
+  border: 3px solid var(--ink) !important;
+  border-radius: 1.5rem !important;
+  background: #fff !important;
+  box-shadow: 5px 6px 0 var(--ink) !important;
+  overflow: hidden !important;
+}
+
+.cl-slop-menu-item,
+.cl-userButtonPopoverActionButton {
+  border-radius: 1rem !important;
+  border: 3px solid transparent !important;
+  min-height: 2.6rem !important;
+}
+
+.cl-slop-menu-item:hover,
+.cl-userButtonPopoverActionButton:hover {
+  background: var(--accent) !important;
+  border-color: var(--ink) !important;
+  box-shadow: 2px 2px 0 var(--ink) !important;
+}
+
+.cl-userButtonPopoverFooter,
+.cl-userButtonPopoverFooter {
+  display: none !important;
+}
+
+/* Account / UserProfile modal */
+.cl-slop-profile-card-box,
+.cl-userProfile-root .cl-cardBox {
+  border-radius: 1.75rem !important;
+}
+
+.cl-slop-profile-card,
+.cl-userProfile-root .cl-card {
+  border: 3px solid var(--ink) !important;
+  border-radius: 1.75rem !important;
+  background: #fff !important;
+  box-shadow: 6px 8px 0 var(--ink) !important;
+  overflow: hidden !important;
+}
+
+.cl-slop-navbar,
+.cl-navbar {
+  background: var(--bg) !important;
+  border-right: 3px solid var(--ink) !important;
+}
+
+.cl-navbarButton[data-active="true"],
+.cl-navbarButton[aria-current="page"] {
+  background: var(--accent) !important;
+  border-color: var(--ink) !important;
+  box-shadow: 2px 2px 0 var(--ink) !important;
+  color: var(--ink) !important;
+}
+
+.cl-slop-scroll,
+.cl-scrollBox {
+  background: #fff !important;
+}
+
+.cl-slop-badge,
+.cl-badge {
+  border: 2px solid var(--ink) !important;
+  border-radius: 999px !important;
+  background: var(--accent-3) !important;
+  color: var(--ink) !important;
+  font-weight: 800 !important;
+}
+
+.cl-profileSectionPrimaryButton,
+.cl-formButtonReset {
+  font-weight: 800 !important;
+}
+
+.cl-profileSectionPrimaryButton:hover {
+  color: var(--ink) !important;
+  background: var(--accent) !important;
+  border-radius: 0.75rem;
+}
