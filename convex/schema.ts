@@ -47,6 +47,7 @@ export default defineSchema({
     screenshotProvider: v.optional(v.string()),
     screenshotStorageId: v.optional(v.id("_storage")),
     errorMessage: v.optional(v.string()),
+    sharedAt: v.optional(v.number()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })

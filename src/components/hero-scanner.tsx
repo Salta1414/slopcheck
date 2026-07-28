@@ -4,6 +4,7 @@ import { SignInButton, SignUpButton, Show } from "@clerk/nextjs";
 import { useAction } from "convex/react";
 import { useEffect, useState, useTransition } from "react";
 import { api } from "../../convex/_generated/api";
+import { ShareScoreButton } from "@/components/share-score-button";
 import type { GuestScan } from "@/lib/guest-storage";
 import {
   createGuestKey,
@@ -54,71 +55,91 @@ export function HeroScanner() {
 
   return (
     <section className="relative mx-auto flex w-full max-w-6xl flex-col gap-10 px-4 pb-16 pt-4 sm:px-6 lg:pt-8">
-      <div className="relative z-10 max-w-3xl">
-        <p className="mb-3 inline-block animate-wiggle rounded-full border-[3px] border-[var(--ink)] bg-[var(--accent-3)] px-3 py-1 text-xs font-extrabold uppercase tracking-wide text-[var(--ink)] shadow-[3px_3px_0_var(--ink)]">
-          UI slop detector · €5 full review
-        </p>
-        <h1 className="font-[family-name:var(--font-display)] text-4xl font-black leading-[1.05] tracking-tight text-[var(--ink)] sm:text-6xl">
-          Is your site{" "}
-          <span className="relative inline-block">
-            <span className="relative z-10">AI slop?</span>
-            <span
-              aria-hidden
-              className="absolute -bottom-1 left-0 right-0 h-3 rounded-full bg-[var(--accent)]/80"
-            />
-          </span>
-        </h1>
-        <p className="mt-4 max-w-xl text-base font-medium text-[var(--ink)]/75 sm:text-lg">
-          Paste a URL. We screenshot it, score the UI, then unlock fix prompts
-          after you sign in and pay.
-        </p>
-
-        <form
-          onSubmit={onSubmit}
-          className="mt-8 flex w-full flex-col gap-3 sm:flex-row sm:items-stretch"
-        >
-          <label className="sr-only" htmlFor="site-url">
-            Website URL
-          </label>
-          <input
-            id="site-url"
-            type="text"
-            inputMode="url"
-            autoComplete="url"
-            placeholder="https://your-site.com"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            disabled={isPending}
-            className="min-h-14 flex-1 rounded-[1.4rem] border-[3px] border-[var(--ink)] bg-white px-5 text-base font-semibold text-[var(--ink)] shadow-[4px_5px_0_var(--ink)] outline-none placeholder:text-[var(--ink)]/35 focus:ring-4 focus:ring-[var(--accent)]/50 disabled:opacity-60"
-          />
-          <button
-            type="submit"
-            disabled={isPending || url.trim().length < 3}
-            className="min-h-14 shrink-0 rounded-[1.4rem] border-[3px] border-[var(--ink)] bg-[var(--accent)] px-7 text-base font-black text-[var(--ink)] shadow-[4px_5px_0_var(--ink)] transition enabled:hover:translate-y-[2px] enabled:hover:shadow-[2px_3px_0_var(--ink)] disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {isPending ? "Sniffing…" : "Check UI"}
-          </button>
-        </form>
-
-        {error ? (
-          <p className="mt-3 text-sm font-bold text-[var(--accent-2)]" role="alert">
-            {error}
+      <div className="relative z-10 grid items-center gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-8">
+        <div className="max-w-3xl">
+          <p className="mb-3 inline-block animate-wiggle rounded-full border-[3px] border-[var(--ink)] bg-[var(--accent-3)] px-3 py-1 text-xs font-extrabold uppercase tracking-wide text-[var(--ink)] shadow-[3px_3px_0_var(--ink)]">
+            UI slop detector · €5 full review
           </p>
-        ) : null}
+          <h1 className="font-[family-name:var(--font-display)] text-4xl font-black leading-[1.05] tracking-tight text-[var(--ink)] sm:text-6xl">
+            Is your site{" "}
+            <span className="relative inline-block">
+              <span className="relative z-10">AI slop?</span>
+              <span
+                aria-hidden
+                className="absolute -bottom-1 left-0 right-0 h-3 rounded-full bg-[var(--accent)]/80"
+              />
+            </span>
+          </h1>
+          <p className="mt-4 max-w-xl text-base font-medium text-[var(--ink)]/75 sm:text-lg">
+            Paste a URL. We screenshot it, score the UI, then unlock fix prompts
+            after you sign in and pay.
+          </p>
+
+          <form
+            onSubmit={onSubmit}
+            className="mt-8 flex w-full flex-col gap-3 sm:flex-row sm:items-stretch"
+          >
+            <label className="sr-only" htmlFor="site-url">
+              Website URL
+            </label>
+            <input
+              id="site-url"
+              type="text"
+              inputMode="url"
+              autoComplete="url"
+              placeholder="https://your-site.com"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              disabled={isPending}
+              className="min-h-14 flex-1 rounded-[1.4rem] border-[3px] border-[var(--ink)] bg-white px-5 text-base font-semibold text-[var(--ink)] shadow-[4px_5px_0_var(--ink)] outline-none placeholder:text-[var(--ink)]/35 focus:ring-4 focus:ring-[var(--accent)]/50 disabled:opacity-60"
+            />
+            <button
+              type="submit"
+              disabled={isPending || url.trim().length < 3}
+              className="min-h-14 shrink-0 rounded-[1.4rem] border-[3px] border-[var(--ink)] bg-[var(--accent)] px-7 text-base font-black text-[var(--ink)] shadow-[4px_5px_0_var(--ink)] transition enabled:hover:translate-y-[2px] enabled:hover:shadow-[2px_3px_0_var(--ink)] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isPending ? "Sniffing…" : "Check UI"}
+            </button>
+          </form>
+
+          {error ? (
+            <p
+              className="mt-3 text-sm font-bold text-[var(--accent-2)]"
+              role="alert"
+            >
+              {error}
+            </p>
+          ) : null}
+        </div>
+
+        <HeroBlobVideo />
       </div>
 
       {isPending ? <ScanningBlob /> : null}
       {scan && !isPending ? <TeaserResult scan={scan} /> : null}
-
-      <div
-        aria-hidden
-        className="animate-blob-bounce pointer-events-none absolute -right-8 top-10 hidden h-64 w-64 rounded-[40%] border-[3px] border-[var(--ink)] bg-[var(--accent)]/40 shadow-[8px_8px_0_var(--ink)] lg:block"
-      />
-      <div
-        aria-hidden
-        className="animate-blob-bounce-delayed pointer-events-none absolute right-24 top-48 hidden h-28 w-40 -rotate-6 rounded-[2rem] border-[3px] border-[var(--ink)] bg-[var(--accent-2)]/70 shadow-[5px_5px_0_var(--ink)] lg:block"
-      />
     </section>
+  );
+}
+
+function HeroBlobVideo() {
+  return (
+    <div
+      aria-hidden
+      className="mx-auto w-[220px] justify-self-center sm:w-[240px] lg:w-[260px] lg:justify-self-end"
+    >
+      <div className="overflow-hidden rounded-[1.8rem] border-[3px] border-[var(--ink)] bg-white shadow-[5px_6px_0_var(--ink)]">
+        <video
+          className="aspect-square h-auto w-full object-cover object-center"
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="metadata"
+        >
+          <source src="/brand/hero-blob.mp4" type="video/mp4" />
+        </video>
+      </div>
+    </div>
   );
 }
 
@@ -161,7 +182,18 @@ function TeaserResult({ scan }: { scan: GuestScan }) {
           </p>
         </div>
 
-        <AuthGate scanId={scan.scanId} />
+        <div className="flex flex-col gap-3 sm:items-end">
+          {scan.scanId ? (
+            <ShareScoreButton
+              scanId={scan.scanId}
+              guestKey={scan.guestKey}
+              score={scan.estimatedScore}
+              verdict={scan.verdict}
+              url={scan.normalizedUrl}
+            />
+          ) : null}
+          <AuthGate scanId={scan.scanId} />
+        </div>
       </div>
 
       <div className="grid gap-4 p-6 sm:grid-cols-2 sm:p-8">

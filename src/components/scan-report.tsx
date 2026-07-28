@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { ShareScoreButton } from "@/components/share-score-button";
+import type { SlopVerdict } from "@/lib/guest-storage";
 
 type Finding = {
   area: string;
@@ -17,12 +19,18 @@ type PromptItem = {
 };
 
 export function ScanReport({
+  scanId,
   score,
+  verdict,
+  url,
   summary,
   findings,
   prompts,
 }: {
+  scanId: string;
   score: number;
+  verdict?: SlopVerdict;
+  url: string;
   summary: string;
   findings: Finding[];
   prompts: PromptItem[];
@@ -30,13 +38,23 @@ export function ScanReport({
   return (
     <div className="space-y-8">
       <section className="rounded-[2rem] border-[3px] border-[var(--ink)] bg-white p-6 shadow-[5px_6px_0_var(--ink)] sm:p-8">
-        <p className="text-xs font-extrabold uppercase tracking-wide text-[var(--ink)]/50">
-          Full UI Slop Score
-        </p>
-        <div className="mt-2 flex items-end gap-3">
-          <span className="font-[family-name:var(--font-display)] text-6xl font-black leading-none text-[var(--ink)]">
-            {score}
-          </span>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p className="text-xs font-extrabold uppercase tracking-wide text-[var(--ink)]/50">
+              Full UI Slop Score
+            </p>
+            <div className="mt-2 flex items-end gap-3">
+              <span className="font-[family-name:var(--font-display)] text-6xl font-black leading-none text-[var(--ink)]">
+                {score}
+              </span>
+            </div>
+          </div>
+          <ShareScoreButton
+            scanId={scanId}
+            score={score}
+            verdict={verdict}
+            url={url}
+          />
         </div>
         <p className="mt-4 text-base font-semibold text-[var(--ink)]/80">
           {summary}

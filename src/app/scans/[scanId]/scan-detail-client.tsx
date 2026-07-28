@@ -7,6 +7,7 @@ import { useParams, useSearchParams } from "next/navigation";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { ScanReport } from "@/components/scan-report";
+import { ShareScoreButton } from "@/components/share-score-button";
 import { UnlockButton } from "@/components/unlock-button";
 
 export default function ScanDetailClient() {
@@ -119,14 +120,20 @@ function ScanDetailBody({
 
       {scan.review ? (
         <ScanReport
+          scanId={scan._id}
           score={scan.review.score}
+          verdict={scan.verdict}
+          url={scan.normalizedUrl}
           summary={scan.review.summary}
           findings={scan.review.findings}
           prompts={scan.review.prompts}
         />
       ) : (
         <LockedTeaser
+          scanId={scan._id}
           estimatedScore={scan.estimatedScore}
+          verdict={scan.verdict}
+          url={scan.normalizedUrl}
           teaserFlags={scan.teaserFlags ?? []}
           lockedFindings={scan.lockedFindings ?? []}
           processing={processing}
@@ -138,13 +145,19 @@ function ScanDetailBody({
 }
 
 function LockedTeaser({
+  scanId,
   estimatedScore,
+  verdict,
+  url,
   teaserFlags,
   lockedFindings,
   processing,
   errorMessage,
 }: {
+  scanId: string;
   estimatedScore?: number;
+  verdict?: "fresh" | "mixed" | "likely_slop" | "peak_slop";
+  url: string;
   teaserFlags: string[];
   lockedFindings: string[];
   processing: boolean;
@@ -152,22 +165,32 @@ function LockedTeaser({
 }) {
   return (
     <div className="overflow-hidden rounded-[2rem] border-[3px] border-[var(--ink)] bg-white shadow-[6px_8px_0_var(--ink)]">
-      <div className="border-b-[3px] border-[var(--ink)] p-6 sm:p-8">
-        <p className="text-xs font-extrabold uppercase tracking-wide text-[var(--ink)]/50">
-          UI Slop Score · estimate
-        </p>
-        <p className="mt-2 font-[family-name:var(--font-display)] text-6xl font-black">
-          {estimatedScore ?? "—"}
-        </p>
-        {processing ? (
-          <p className="mt-3 animate-squish text-sm font-extrabold text-[var(--ink)]/70">
-            Strong model is reviewing…
+      <div className="flex flex-col gap-4 border-b-[3px] border-[var(--ink)] p-6 sm:flex-row sm:items-end sm:justify-between sm:p-8">
+        <div>
+          <p className="text-xs font-extrabold uppercase tracking-wide text-[var(--ink)]/50">
+            UI Slop Score · estimate
           </p>
-        ) : null}
-        {errorMessage ? (
-          <p className="mt-3 text-sm font-bold text-[var(--accent-2)]">
-            {errorMessage}
+          <p className="mt-2 font-[family-name:var(--font-display)] text-6xl font-black">
+            {estimatedScore ?? "—"}
           </p>
+          {processing ? (
+            <p className="mt-3 animate-squish text-sm font-extrabold text-[var(--ink)]/70">
+              Strong model is reviewing…
+            </p>
+          ) : null}
+          {errorMessage ? (
+            <p className="mt-3 text-sm font-bold text-[var(--accent-2)]">
+              {errorMessage}
+            </p>
+          ) : null}
+        </div>
+        {estimatedScore !== undefined ? (
+          <ShareScoreButton
+            scanId={scanId}
+            score={estimatedScore}
+            verdict={verdict}
+            url={url}
+          />
         ) : null}
       </div>
       <div className="grid gap-4 p-6 sm:grid-cols-2 sm:p-8">

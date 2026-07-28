@@ -18,6 +18,7 @@ import type * as reviewActions from "../reviewActions.js";
 import type * as scanActions from "../scanActions.js";
 import type * as scanInternal from "../scanInternal.js";
 import type * as scans from "../scans.js";
+import type * as share from "../share.js";
 import type * as users from "../users.js";
 
 import type {
@@ -37,6 +38,7 @@ declare const fullApi: ApiFromModules<{
   scanActions: typeof scanActions;
   scanInternal: typeof scanInternal;
   scans: typeof scans;
+  share: typeof share;
   users: typeof users;
 }>;
 
