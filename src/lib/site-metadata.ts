@@ -2,6 +2,15 @@ import type { Metadata } from "next";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://slopcheck.dev";
 
+/** Stable absolute OG asset — X/Twitter often chokes on Next's hashed image routes. */
+const shareImage = {
+  url: `${siteUrl}/brand/og.png?v=20260728`,
+  width: 1200,
+  height: 630,
+  alt: "Slopcheck — comic blob sniffing a website for AI slop",
+  type: "image/png",
+} as const;
+
 export const siteMetadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
@@ -34,21 +43,14 @@ export const siteMetadata: Metadata = {
     title: "Slopcheck — Is your UI AI slop?",
     description:
       "Paste a URL. We sniff AI-looking UI, score the slop, and unlock fix prompts.",
-    images: [
-      {
-        url: "/opengraph-image.png",
-        width: 1200,
-        height: 630,
-        alt: "Slopcheck — comic blob sniffing a website for AI slop",
-      },
-    ],
+    images: [shareImage],
   },
   twitter: {
     card: "summary_large_image",
     title: "Slopcheck — Is your UI AI slop?",
     description:
       "Paste a URL. We sniff AI-looking UI, score the slop, and unlock fix prompts.",
-    images: ["/twitter-image.png"],
+    images: [shareImage.url],
   },
   icons: {
     icon: [
