@@ -2,7 +2,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { Fredoka, Nunito } from "next/font/google";
 import { GuestScanSync } from "@/components/guest-scan-sync";
 import { Providers } from "@/components/providers";
-import { SiteFooter } from "@/components/site-footer";
+import { ConditionalSiteFooter } from "@/components/conditional-site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { clerkAppearance } from "@/lib/clerk-appearance";
 import { siteMetadata } from "@/lib/site-metadata";
@@ -36,7 +36,7 @@ export default function RootLayout({
             <div className="relative z-0 flex min-h-full flex-col">
               <SiteHeader />
               <main className="flex-1">{children}</main>
-              <SiteFooter />
+              <ConditionalSiteFooter />
             </div>
           </Providers>
         </ClerkProvider>
