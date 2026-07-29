@@ -10,7 +10,7 @@ export function requireOpenRouterKey(): string {
 
 export function preevalModel(): string {
   // Fast vision default for free teaser scans — override via OPENROUTER_PREEVAL_MODEL
-  return process.env.OPENROUTER_PREEVAL_MODEL ?? "google/gemini-2.5-flash";
+  return process.env.OPENROUTER_PREEVAL_MODEL ?? "google/gemini-3.6-flash";
 }
 
 export function fullReviewModel(): string {
