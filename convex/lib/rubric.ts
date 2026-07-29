@@ -54,13 +54,18 @@ Score 0–100 where HIGHER = more AI slop. Same rubric as preeval:
 Fairness: intentional design systems and minimalism are NOT automatic fails. Missing brand voice + interchangeable layout IS.
 ${CAPTURE_CAVEAT}
 
+You usually receive TWO screenshots in order:
+1) Desktop viewport (1440×900)
+2) Mobile viewport (390×844)
+Judge BOTH. Include at least one finding that is specifically about the mobile experience when mobile issues are visible (nav collapse, cramped hero, unreadably small type, stacked card mush, CTA below fold, etc.). If only one image is provided, review that one and note the missing viewport briefly.
+
 Return ONLY valid JSON (no markdown):
 {
   "score": number,
   "summary": string,
   "findings": [
     {
-      "area": "hero" | "nav" | "features" | "typography" | "color" | "imagery" | "cta" | "layout" | "capture",
+      "area": "hero" | "nav" | "features" | "typography" | "color" | "imagery" | "cta" | "layout" | "mobile" | "capture",
       "severity": "low" | "medium" | "high",
       "issue": string,
       "whyItFeelsAi": string,
@@ -78,9 +83,10 @@ Return ONLY valid JSON (no markdown):
 
 Rules:
 - 4–8 findings, grounded ONLY in visible screenshots
+- Prefer a mix of desktop + mobile observations when both images exist
 - 3–5 actionable copy-paste prompts that rewrite specific UI sections
 - prompts must be ready to paste into the named tool
-- summary: 2–3 sentences, direct, no fluff
+- summary: 2–3 sentences, direct, no fluff — mention mobile if it meaningfully changes the verdict
 - score should be consistent with evidence (±15 from a typical preeval estimate is fine)
 - If media failed to load, include a low-severity finding with area "capture" and do not inflate the slop score`;
 

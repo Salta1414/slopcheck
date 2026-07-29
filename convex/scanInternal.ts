@@ -206,6 +206,7 @@ export const saveFullReview = internalMutation({
     ),
     model: v.string(),
     screenshotStorageId: v.optional(v.id("_storage")),
+    mobileScreenshotStorageId: v.optional(v.id("_storage")),
   },
   returns: v.id("reviews"),
   handler: async (ctx, args) => {
@@ -243,6 +244,7 @@ export const saveFullReview = internalMutation({
       score: number;
       updatedAt: number;
       screenshotStorageId?: Id<"_storage">;
+      mobileScreenshotStorageId?: Id<"_storage">;
     } = {
       status: "ready",
       score: args.score,
@@ -250,6 +252,9 @@ export const saveFullReview = internalMutation({
     };
     if (args.screenshotStorageId) {
       scanPatch.screenshotStorageId = args.screenshotStorageId;
+    }
+    if (args.mobileScreenshotStorageId) {
+      scanPatch.mobileScreenshotStorageId = args.mobileScreenshotStorageId;
     }
     await ctx.db.patch(args.scanId, scanPatch);
 

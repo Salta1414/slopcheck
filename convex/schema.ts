@@ -46,6 +46,8 @@ export default defineSchema({
     preevalModel: v.optional(v.string()),
     screenshotProvider: v.optional(v.string()),
     screenshotStorageId: v.optional(v.id("_storage")),
+    /** Paid full-review mobile capture (390×844) */
+    mobileScreenshotStorageId: v.optional(v.id("_storage")),
     errorMessage: v.optional(v.string()),
     sharedAt: v.optional(v.number()),
     createdAt: v.number(),

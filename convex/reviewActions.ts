@@ -9,7 +9,8 @@ import {
   parseJsonObject,
 } from "./lib/openrouter";
 import { FULL_REVIEW_SYSTEM_PROMPT, scoreToVerdict } from "./lib/rubric";
-import { captureDesktopScreenshotBase64 } from "./lib/screenshots";
+import { captureScreenshotBase64 } from "./lib/screenshots";
+import type { Id } from "./_generated/dataModel";
 
 const PRIVATE_HOST_RE =
   /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[0-1])\.|0\.0\.0\.0|::1|\[::1\])/i;
@@ -144,31 +145,68 @@ export const runFullReview = internalAction({
         throw new Error("That URL cannot be reviewed");
       }
 
-      let images: string[] = [];
+      let desktopBase64: string | null = null;
       let screenshotStorageId = scan.screenshotStorageId;
+      let mobileScreenshotStorageId: Id<"_storage"> | undefined;
 
       if (scan.screenshotStorageId) {
         const blob = await ctx.storage.get(scan.screenshotStorageId);
         if (blob) {
-          const buf = Buffer.from(await blob.arrayBuffer());
-          images = [buf.toString("base64")];
+          desktopBase64 = Buffer.from(await blob.arrayBuffer()).toString(
+            "base64",
+          );
         }
       }
 
-      if (images.length === 0) {
-        const shot = await captureDesktopScreenshotBase64(scan.normalizedUrl, {
+      if (!desktopBase64) {
+        const desktop = await captureScreenshotBase64(scan.normalizedUrl, {
           fullPage: true,
+          viewport: "desktop",
         });
-        images = [shot.base64];
-        // Store for later (via mutation with generated upload URL would be better;
-        // for now we skip re-store if capture-only)
+        desktopBase64 = desktop.base64;
+        const bytes = Buffer.from(desktop.base64, "base64");
+        screenshotStorageId = await ctx.storage.store(
+          new Blob([new Uint8Array(bytes)], { type: "image/png" }),
+        );
+      }
+
+      const images: string[] = [desktopBase64];
+      let hasMobile = false;
+
+      try {
+        const mobile = await captureScreenshotBase64(scan.normalizedUrl, {
+          fullPage: false,
+          viewport: "mobile",
+        });
+        images.push(mobile.base64);
+        hasMobile = true;
+        const mobileBytes = Buffer.from(mobile.base64, "base64");
+        mobileScreenshotStorageId = await ctx.storage.store(
+          new Blob([new Uint8Array(mobileBytes)], { type: "image/png" }),
+        );
+      } catch (mobileError) {
+        console.error("Mobile screenshot failed; continuing with desktop only", {
+          scanId: args.scanId,
+          error:
+            mobileError instanceof Error
+              ? mobileError.message
+              : "unknown mobile capture error",
+        });
       }
 
       const model = fullReviewModel();
       const content = await openRouterVisionJson({
         model,
         system: FULL_REVIEW_SYSTEM_PROMPT,
-        userText: `Full UI slop review.\nURL: ${scan.normalizedUrl}\nPreeval estimate: ${scan.estimatedScore ?? "n/a"}\nPreeval verdict: ${scan.verdict ?? "n/a"}`,
+        userText: [
+          "Full UI slop review.",
+          `URL: ${scan.normalizedUrl}`,
+          `Preeval estimate: ${scan.estimatedScore ?? "n/a"}`,
+          `Preeval verdict: ${scan.verdict ?? "n/a"}`,
+          hasMobile
+            ? "Images in order: (1) Desktop 1440×900, (2) Mobile 390×844. Review both."
+            : "Only the desktop screenshot is available (mobile capture failed).",
+        ].join("\n"),
         imagesBase64Png: images,
       });
 
@@ -183,6 +221,7 @@ export const runFullReview = internalAction({
         prompts: parsed.prompts,
         model,
         screenshotStorageId,
+        mobileScreenshotStorageId,
       });
     } catch (error) {
       const message =

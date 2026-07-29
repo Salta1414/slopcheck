@@ -9,33 +9,90 @@
 
 const DEFAULT_BROWSERLESS_BASE = "https://production-sfo.browserless.io";
 
-export async function captureDesktopScreenshotBase64(
+export type CaptureViewport = "desktop" | "mobile";
+
+type ViewportConfig = {
+  width: number;
+  height: number;
+  deviceScaleFactor: number;
+  isMobile: boolean;
+  hasTouch: boolean;
+};
+
+const VIEWPORTS: Record<CaptureViewport, ViewportConfig> = {
+  desktop: {
+    width: 1440,
+    height: 900,
+    deviceScaleFactor: 1,
+    isMobile: false,
+    hasTouch: false,
+  },
+  /** iPhone-ish frame — used for paid full reviews */
+  mobile: {
+    width: 390,
+    height: 844,
+    deviceScaleFactor: 2,
+    isMobile: true,
+    hasTouch: true,
+  },
+};
+
+export type CaptureOpts = {
+  fullPage?: boolean;
+  viewport?: CaptureViewport;
+};
+
+export async function captureScreenshotBase64(
   targetUrl: string,
-  opts?: { fullPage?: boolean },
-): Promise<{ base64: string; provider: string }> {
+  opts?: CaptureOpts,
+): Promise<{ base64: string; provider: string; viewport: CaptureViewport }> {
   const fullPage = opts?.fullPage ?? false;
+  const viewport = opts?.viewport ?? "desktop";
+  const vp = VIEWPORTS[viewport];
 
   const browserlessToken = process.env.BROWSERLESS_API_TOKEN;
   if (browserlessToken) {
-    return await captureWithBrowserless(targetUrl, fullPage, browserlessToken);
+    const shot = await captureWithBrowserless(
+      targetUrl,
+      fullPage,
+      browserlessToken,
+      vp,
+    );
+    return { ...shot, viewport };
   }
 
   const screenshotOneKey = process.env.SCREENSHOT_API_KEY;
   if (screenshotOneKey) {
-    return await captureWithScreenshotOne(
+    const shot = await captureWithScreenshotOne(
       targetUrl,
       fullPage,
       screenshotOneKey,
+      vp,
     );
+    return { ...shot, viewport };
   }
 
-  return await captureWithMicrolink(targetUrl, fullPage);
+  const shot = await captureWithMicrolink(targetUrl, fullPage, vp);
+  return { ...shot, viewport };
+}
+
+/** @deprecated Prefer captureScreenshotBase64 — kept for preeval call sites. */
+export async function captureDesktopScreenshotBase64(
+  targetUrl: string,
+  opts?: { fullPage?: boolean },
+): Promise<{ base64: string; provider: string }> {
+  const shot = await captureScreenshotBase64(targetUrl, {
+    fullPage: opts?.fullPage,
+    viewport: "desktop",
+  });
+  return { base64: shot.base64, provider: shot.provider };
 }
 
 async function captureWithBrowserless(
   targetUrl: string,
   fullPage: boolean,
   token: string,
+  vp: ViewportConfig,
 ): Promise<{ base64: string; provider: string }> {
   const base = (
     process.env.BROWSERLESS_BASE_URL ?? DEFAULT_BROWSERLESS_BASE
@@ -74,9 +131,11 @@ async function captureWithBrowserless(
         timeout: 10000,
       },
       viewport: {
-        width: 1440,
-        height: 900,
-        deviceScaleFactor: 1,
+        width: vp.width,
+        height: vp.height,
+        deviceScaleFactor: vp.deviceScaleFactor,
+        isMobile: vp.isMobile,
+        hasTouch: vp.hasTouch,
       },
       options: {
         fullPage,
@@ -115,12 +174,14 @@ async function captureWithScreenshotOne(
   targetUrl: string,
   fullPage: boolean,
   key: string,
+  vp: ViewportConfig,
 ): Promise<{ base64: string; provider: string }> {
   const params = new URLSearchParams({
     access_key: key,
     url: targetUrl,
-    viewport_width: "1440",
-    viewport_height: "900",
+    viewport_width: String(vp.width),
+    viewport_height: String(vp.height),
+    device_scale_factor: String(vp.deviceScaleFactor),
     format: "png",
     block_ads: "true",
     block_cookie_banners: "true",
@@ -145,6 +206,7 @@ async function captureWithScreenshotOne(
 async function captureWithMicrolink(
   targetUrl: string,
   fullPage: boolean,
+  vp: ViewportConfig,
 ): Promise<{ base64: string; provider: string }> {
   const micro = new URL("https://api.microlink.io");
   micro.searchParams.set("url", targetUrl);
@@ -154,8 +216,13 @@ async function captureWithMicrolink(
     micro.searchParams.set("screenshot.fullPage", "true");
   }
   micro.searchParams.set("meta", "false");
-  micro.searchParams.set("viewport.width", "1440");
-  micro.searchParams.set("viewport.height", "900");
+  micro.searchParams.set("viewport.width", String(vp.width));
+  micro.searchParams.set("viewport.height", String(vp.height));
+  micro.searchParams.set(
+    "viewport.deviceScaleFactor",
+    String(vp.deviceScaleFactor),
+  );
+  micro.searchParams.set("viewport.isMobile", String(vp.isMobile));
   micro.searchParams.set("waitUntil", "networkidle2");
   micro.searchParams.set("waitForTimeout", "3500");
   micro.searchParams.set("scroll", "body");
