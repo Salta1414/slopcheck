@@ -6,7 +6,7 @@ Alle AI-Calls laufen über **[OpenRouter](https://openrouter.ai)** (ein Key, Mod
 
 | Stufe | Capture | OpenRouter Model | Ziel | ~Kosten/Scan |
 |-------|---------|------------------|------|--------------|
-| **Preeval** | 1× Desktop above-the-fold | `moonshotai/kimi-k3` | Teaser-Score + Flags | **~0.1–2¢** |
+| **Preeval** | 1× Desktop above-the-fold | `google/gemini-2.5-flash` | Teaser-Score + Flags | **~0.1–1¢** |
 | **Full Review** | Desktop + Mobile (+ optional) | `anthropic/claude-opus-5` | Score + Findings + Fix-Prompts | **~5–25¢** |
 
 **Capture:** [Browserless](https://www.browserless.io/) (primary) · ScreenshotOne optional · Microlink last-resort fallback.
@@ -96,7 +96,7 @@ SCREENSHOT_API_KEY=  # optional secondary
 
 ```
 OPENROUTER_API_KEY=
-OPENROUTER_PREEVAL_MODEL=moonshotai/kimi-k3
+OPENROUTER_PREEVAL_MODEL=google/gemini-2.5-flash
 OPENROUTER_FULL_MODEL=anthropic/claude-opus-5
 # optional
 OPENROUTER_SITE_URL=https://slopcheck.app

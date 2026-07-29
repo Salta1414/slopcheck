@@ -44,7 +44,7 @@ API: `https://openrouter.ai/api/v1/chat/completions` (OpenAI-compatible + image_
 
 | Stufe | Model-ID (Vorschlag) | Rolle | ~Cost/Scan |
 |-------|----------------------|-------|------------|
-| **Preeval** | `moonshotai/kimi-k3` | Schnell, billig, Vision | ~0.1–2¢ |
+| **Preeval** | `google/gemini-2.5-flash` | Schnell, billig, Vision | ~0.1–1¢ |
 | **Full** | `anthropic/claude-opus-5` | Tiefe Kritik + Fix-Prompts | ~5–25¢ |
 | Fallback | nächst-billigeres Vision-Model auf OR | wenn primary down | — |
 
@@ -161,7 +161,7 @@ NEXT_PUBLIC_CONVEX_URL
 
 # Phase 2
 OPENROUTER_API_KEY=
-OPENROUTER_PREEVAL_MODEL=moonshotai/kimi-k3
+OPENROUTER_PREEVAL_MODEL=google/gemini-2.5-flash
 OPENROUTER_FULL_MODEL=anthropic/claude-opus-5
 SCREENSHOT_API_KEY=
 SCREENSHOT_API_URL=   # provider-specific

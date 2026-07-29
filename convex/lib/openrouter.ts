@@ -9,7 +9,8 @@ export function requireOpenRouterKey(): string {
 }
 
 export function preevalModel(): string {
-  return process.env.OPENROUTER_PREEVAL_MODEL ?? "moonshotai/kimi-k3";
+  // Fast vision default for free teaser scans — override via OPENROUTER_PREEVAL_MODEL
+  return process.env.OPENROUTER_PREEVAL_MODEL ?? "google/gemini-2.5-flash";
 }
 
 export function fullReviewModel(): string {
