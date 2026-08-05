@@ -23,13 +23,86 @@ type OpenRouterContentPart =
   | { type: "text"; text: string }
   | { type: "image_url"; image_url: { url: string } };
 
+type OpenRouterMessageContent =
+  | string
+  | null
+  | Array<{ type?: string; text?: string }>;
+
+type OpenRouterChoice = {
+  finish_reason?: string | null;
+  native_finish_reason?: string | null;
+  message?: {
+    content?: OpenRouterMessageContent;
+    refusal?: string | null;
+  };
+};
+
 type OpenRouterResponse = {
-  choices?: Array<{
-    message?: { content?: string | null };
-  }>;
+  choices?: OpenRouterChoice[];
   error?: { message?: string };
 };
 
+function extractMessageText(content: OpenRouterMessageContent): string {
+  if (typeof content === "string") {
+    return content.trim();
+  }
+  if (!Array.isArray(content)) {
+    return "";
+  }
+  return content
+    .map((part) => (typeof part?.text === "string" ? part.text : ""))
+    .join("")
+    .trim();
+}
+
+async function callOpenRouterVision(args: {
+  apiKey: string;
+  model: string;
+  system: string;
+  userContent: OpenRouterContentPart[];
+  useJsonObjectFormat: boolean;
+}): Promise<{ text: string; finishReason: string; refusal: string }> {
+  const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${args.apiKey}`,
+      "Content-Type": "application/json",
+      "HTTP-Referer":
+        process.env.OPENROUTER_SITE_URL ?? "https://slopcheck.dev",
+      "X-Title": process.env.OPENROUTER_APP_NAME ?? "Slopcheck",
+    },
+    body: JSON.stringify({
+      model: args.model,
+      temperature: 0.2,
+      ...(args.useJsonObjectFormat
+        ? { response_format: { type: "json_object" } }
+        : {}),
+      messages: [
+        { role: "system", content: args.system },
+        { role: "user", content: args.userContent },
+      ],
+    }),
+  });
+
+  const raw = (await res.json()) as OpenRouterResponse;
+  if (!res.ok) {
+    throw new Error(raw.error?.message ?? `OpenRouter error (${res.status})`);
+  }
+
+  const choice = raw.choices?.[0];
+  const text = extractMessageText(choice?.message?.content ?? null);
+  const refusal =
+    typeof choice?.message?.refusal === "string" ? choice.message.refusal : "";
+  const finishReason =
+    choice?.finish_reason ?? choice?.native_finish_reason ?? "unknown";
+
+  return { text, finishReason, refusal };
+}
+
+/**
+ * Vision → JSON string. Retries once without response_format when providers
+ * (esp. some Gemini routes) return HTTP 200 with empty content under json_object.
+ */
 export async function openRouterVisionJson(args: {
   model: string;
   system: string;
@@ -38,46 +111,46 @@ export async function openRouterVisionJson(args: {
 }): Promise<string> {
   const apiKey = requireOpenRouterKey();
 
-  const content: OpenRouterContentPart[] = [
-    { type: "text", text: args.userText },
+  const userContent: OpenRouterContentPart[] = [
+    {
+      type: "text",
+      text: `${args.userText}\n\nRespond with a single JSON object only — no markdown fences.`,
+    },
     ...args.imagesBase64Png.map((b64) => ({
       type: "image_url" as const,
       image_url: { url: `data:image/png;base64,${b64}` },
     })),
   ];
 
-  const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-      "HTTP-Referer":
-        process.env.OPENROUTER_SITE_URL ?? "http://localhost:3000",
-      "X-Title": process.env.OPENROUTER_APP_NAME ?? "Slopcheck",
-    },
-    body: JSON.stringify({
-      model: args.model,
-      temperature: 0.2,
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: args.system },
-        { role: "user", content },
-      ],
-    }),
+  let last = await callOpenRouterVision({
+    apiKey,
+    model: args.model,
+    system: args.system,
+    userContent,
+    useJsonObjectFormat: true,
   });
 
-  const raw = (await res.json()) as OpenRouterResponse;
-  if (!res.ok) {
-    throw new Error(
-      raw.error?.message ?? `OpenRouter error (${res.status})`,
-    );
+  if (!last.text && !last.refusal) {
+    // Some OpenRouter Gemini providers accept the request but return empty
+    // content when json_object mode is flaky — retry without it.
+    last = await callOpenRouterVision({
+      apiKey,
+      model: args.model,
+      system: args.system,
+      userContent,
+      useJsonObjectFormat: false,
+    });
   }
 
-  const text = raw.choices?.[0]?.message?.content;
-  if (!text) {
-    throw new Error("OpenRouter returned empty content");
+  if (last.refusal) {
+    throw new Error(`Model refused the request: ${last.refusal.slice(0, 180)}`);
   }
-  return text;
+  if (!last.text) {
+    throw new Error(
+      `OpenRouter returned empty content (finish_reason=${last.finishReason}). Try again in a moment.`,
+    );
+  }
+  return last.text;
 }
 
 export function parseJsonObject(text: string): unknown {
