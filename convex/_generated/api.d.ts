@@ -13,6 +13,7 @@ import type * as lib_auth from "../lib/auth.js";
 import type * as lib_openrouter from "../lib/openrouter.js";
 import type * as lib_rubric from "../lib/rubric.js";
 import type * as lib_screenshots from "../lib/screenshots.js";
+import type * as owner from "../owner.js";
 import type * as payments from "../payments.js";
 import type * as reviewActions from "../reviewActions.js";
 import type * as scanActions from "../scanActions.js";
@@ -33,6 +34,7 @@ declare const fullApi: ApiFromModules<{
   "lib/openrouter": typeof lib_openrouter;
   "lib/rubric": typeof lib_rubric;
   "lib/screenshots": typeof lib_screenshots;
+  owner: typeof owner;
   payments: typeof payments;
   reviewActions: typeof reviewActions;
   scanActions: typeof scanActions;
