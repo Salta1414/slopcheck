@@ -104,4 +104,17 @@ export default defineSchema({
     model: v.string(),
     createdAt: v.number(),
   }).index("by_scan", ["scanId"]),
+
+  feedback: defineTable({
+    userId: v.id("users"),
+    scanId: v.optional(v.id("scans")),
+    title: v.string(),
+    message: v.string(),
+    email: v.optional(v.string()),
+    twitter: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index("by_created", ["createdAt"])
+    .index("by_user", ["userId"])
+    .index("by_scan", ["scanId"]),
 });

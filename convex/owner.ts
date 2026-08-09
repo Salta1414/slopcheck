@@ -4,7 +4,7 @@ import { query } from "./_generated/server";
 import type { QueryCtx } from "./_generated/server";
 
 const DEFAULT_OWNER_EMAIL = "domenic.wehkamp@web.de";
-const PAGE_SIZE = 250;
+const MAX_STATS_DOCUMENTS = 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 const verdictValidator = v.union(
@@ -70,15 +70,22 @@ const overviewValidator = v.object({
   recentScans: v.array(recentScanValidator),
 });
 
-async function getOwnerIdentity(ctx: QueryCtx) {
+export async function getOwnerIdentity(ctx: QueryCtx) {
   const identity = await ctx.auth.getUserIdentity();
-  if (!identity?.email) {
+  if (!identity) {
     return null;
   }
 
   const configuredOwnerEmail =
     process.env.OWNER_EMAIL?.trim().toLowerCase() || DEFAULT_OWNER_EMAIL;
-  if (identity.email.trim().toLowerCase() !== configuredOwnerEmail) {
+  const configuredOwnerClerkId = process.env.OWNER_CLERK_ID?.trim();
+  const matchesClerkId =
+    configuredOwnerClerkId !== undefined &&
+    identity.subject === configuredOwnerClerkId;
+  const matchesEmail =
+    identity.email?.trim().toLowerCase() === configuredOwnerEmail;
+
+  if (!matchesClerkId && !matchesEmail) {
     return null;
   }
 
@@ -103,31 +110,26 @@ export const overview = query({
     let totalUsers = 0;
     let newUsersLast7Days = 0;
     let newUsersLast30Days = 0;
-    let userCursor: string | null = null;
 
-    while (true) {
-      const page = await ctx.db.query("users").order("desc").paginate({
-        cursor: userCursor,
-        numItems: PAGE_SIZE,
-      });
+    // Convex allows only one paginated query per function. Keep this owner-only
+    // dashboard bounded while the product is small; increase the cap alongside
+    // a dedicated aggregation path if these tables outgrow it.
+    const users = await ctx.db
+      .query("users")
+      .order("desc")
+      .take(MAX_STATS_DOCUMENTS);
 
-      for (const user of page.page) {
-        totalUsers += 1;
-        if (user.createdAt >= last7Days) {
-          newUsersLast7Days += 1;
-        }
-        if (user.createdAt >= last30Days) {
-          newUsersLast30Days += 1;
-        }
-        if (user.email) {
-          userEmails.set(user._id, user.email);
-        }
+    for (const user of users) {
+      totalUsers += 1;
+      if (user.createdAt >= last7Days) {
+        newUsersLast7Days += 1;
       }
-
-      if (page.isDone) {
-        break;
+      if (user.createdAt >= last30Days) {
+        newUsersLast30Days += 1;
       }
-      userCursor = page.continueCursor;
+      if (user.email) {
+        userEmails.set(user._id, user.email);
+      }
     }
 
     const statusCounts = {
@@ -163,123 +165,107 @@ export const overview = query({
     let scoredScans = 0;
     let scoreTotal = 0;
     let scansLast7Days = 0;
-    let scanCursor: string | null = null;
 
-    while (true) {
-      const page = await ctx.db.query("scans").order("desc").paginate({
-        cursor: scanCursor,
-        numItems: PAGE_SIZE,
-      });
+    const scans = await ctx.db
+      .query("scans")
+      .order("desc")
+      .take(MAX_STATS_DOCUMENTS);
 
-      for (const scan of page.page) {
-        totalScans += 1;
-        if (scan.createdAt >= last7Days) {
-          scansLast7Days += 1;
-        }
-
-        switch (scan.status) {
-          case "pending_capture":
-            statusCounts.pendingCapture += 1;
-            break;
-          case "capturing":
-            statusCounts.capturing += 1;
-            break;
-          case "preeval_running":
-            statusCounts.preevalRunning += 1;
-            break;
-          case "preeval_ready":
-            statusCounts.preevalReady += 1;
-            break;
-          case "awaiting_payment":
-            statusCounts.awaitingPayment += 1;
-            break;
-          case "paid":
-            statusCounts.paid += 1;
-            break;
-          case "full_review_running":
-            statusCounts.fullReviewRunning += 1;
-            break;
-          case "ready":
-            statusCounts.ready += 1;
-            completedScans += 1;
-            break;
-          case "failed":
-            statusCounts.failed += 1;
-            failedScans += 1;
-            break;
-        }
-
-        const score = scan.score ?? scan.estimatedScore;
-        if (score !== undefined) {
-          scoredScans += 1;
-          scoreTotal += score;
-        }
-
-        switch (scan.verdict) {
-          case "fresh":
-            verdictCounts.fresh += 1;
-            break;
-          case "mixed":
-            verdictCounts.mixed += 1;
-            break;
-          case "likely_slop":
-            verdictCounts.likelySlop += 1;
-            break;
-          case "peak_slop":
-            verdictCounts.peakSlop += 1;
-            break;
-        }
-
-        if (recentScans.length < 8) {
-          recentScans.push({
-            _id: scan._id,
-            url: scan.url,
-            status: scan.status,
-            score: score ?? null,
-            verdict: scan.verdict ?? null,
-            createdAt: scan.createdAt,
-            ownerEmail: scan.userId
-              ? (userEmails.get(scan.userId) ?? null)
-              : null,
-          });
-        }
+    for (const scan of scans) {
+      totalScans += 1;
+      if (scan.createdAt >= last7Days) {
+        scansLast7Days += 1;
       }
 
-      if (page.isDone) {
-        break;
+      switch (scan.status) {
+        case "pending_capture":
+          statusCounts.pendingCapture += 1;
+          break;
+        case "capturing":
+          statusCounts.capturing += 1;
+          break;
+        case "preeval_running":
+          statusCounts.preevalRunning += 1;
+          break;
+        case "preeval_ready":
+          statusCounts.preevalReady += 1;
+          break;
+        case "awaiting_payment":
+          statusCounts.awaitingPayment += 1;
+          break;
+        case "paid":
+          statusCounts.paid += 1;
+          break;
+        case "full_review_running":
+          statusCounts.fullReviewRunning += 1;
+          break;
+        case "ready":
+          statusCounts.ready += 1;
+          completedScans += 1;
+          break;
+        case "failed":
+          statusCounts.failed += 1;
+          failedScans += 1;
+          break;
       }
-      scanCursor = page.continueCursor;
+
+      const score = scan.score ?? scan.estimatedScore;
+      if (score !== undefined) {
+        scoredScans += 1;
+        scoreTotal += score;
+      }
+
+      switch (scan.verdict) {
+        case "fresh":
+          verdictCounts.fresh += 1;
+          break;
+        case "mixed":
+          verdictCounts.mixed += 1;
+          break;
+        case "likely_slop":
+          verdictCounts.likelySlop += 1;
+          break;
+        case "peak_slop":
+          verdictCounts.peakSlop += 1;
+          break;
+      }
+
+      if (recentScans.length < 8) {
+        recentScans.push({
+          _id: scan._id,
+          url: scan.url,
+          status: scan.status,
+          score: score ?? null,
+          verdict: scan.verdict ?? null,
+          createdAt: scan.createdAt,
+          ownerEmail: scan.userId
+            ? (userEmails.get(scan.userId) ?? null)
+            : null,
+        });
+      }
     }
 
     let paidCount = 0;
     let paidRevenueCents = 0;
     let paidLast30DaysCents = 0;
     let refundedCount = 0;
-    let paymentCursor: string | null = null;
 
-    while (true) {
-      const page = await ctx.db.query("payments").order("desc").paginate({
-        cursor: paymentCursor,
-        numItems: PAGE_SIZE,
-      });
+    const payments = await ctx.db
+      .query("payments")
+      .order("desc")
+      .take(MAX_STATS_DOCUMENTS);
 
-      for (const payment of page.page) {
-        if (payment.status === "paid") {
-          paidCount += 1;
-          paidRevenueCents += payment.amountCents;
-          const paidAt = payment.paidAt ?? payment.createdAt;
-          if (paidAt >= last30Days) {
-            paidLast30DaysCents += payment.amountCents;
-          }
-        } else if (payment.status === "refunded") {
-          refundedCount += 1;
+    for (const payment of payments) {
+      if (payment.status === "paid") {
+        paidCount += 1;
+        paidRevenueCents += payment.amountCents;
+        const paidAt = payment.paidAt ?? payment.createdAt;
+        if (paidAt >= last30Days) {
+          paidLast30DaysCents += payment.amountCents;
         }
+      } else if (payment.status === "refunded") {
+        refundedCount += 1;
       }
-
-      if (page.isDone) {
-        break;
-      }
-      paymentCursor = page.continueCursor;
     }
 
     return {

@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import type { Id } from "../../convex/_generated/dataModel";
+import { FeedbackButton } from "@/components/feedback-button";
 import { ShareScoreButton } from "@/components/share-score-button";
 import type { SlopVerdict } from "@/lib/guest-storage";
 
@@ -27,7 +29,7 @@ export function ScanReport({
   findings,
   prompts,
 }: {
-  scanId: string;
+  scanId: Id<"scans">;
   score: number;
   verdict?: SlopVerdict;
   url: string;
@@ -59,6 +61,7 @@ export function ScanReport({
         <p className="mt-4 text-base font-semibold text-[var(--ink)]/80">
           {summary}
         </p>
+        <FeedbackButton scanId={scanId} />
       </section>
 
       <section>

@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as feedback from "../feedback.js";
 import type * as http from "../http.js";
 import type * as lib_auth from "../lib/auth.js";
 import type * as lib_openrouter from "../lib/openrouter.js";
@@ -20,6 +21,7 @@ import type * as scanActions from "../scanActions.js";
 import type * as scanInternal from "../scanInternal.js";
 import type * as scans from "../scans.js";
 import type * as share from "../share.js";
+import type * as stripeAnalytics from "../stripeAnalytics.js";
 import type * as users from "../users.js";
 
 import type {
@@ -29,6 +31,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  feedback: typeof feedback;
   http: typeof http;
   "lib/auth": typeof lib_auth;
   "lib/openrouter": typeof lib_openrouter;
@@ -41,6 +44,7 @@ declare const fullApi: ApiFromModules<{
   scanInternal: typeof scanInternal;
   scans: typeof scans;
   share: typeof share;
+  stripeAnalytics: typeof stripeAnalytics;
   users: typeof users;
 }>;
 

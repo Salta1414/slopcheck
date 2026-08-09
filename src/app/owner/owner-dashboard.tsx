@@ -1,17 +1,27 @@
 "use client";
 
 import { Show, SignInButton } from "@clerk/nextjs";
-import { useQuery } from "convex/react";
+import { useAction, useQuery } from "convex/react";
 import Link from "next/link";
 import { useState } from "react";
+import { useEffect, useRef } from "react";
 import { api } from "../../../convex/_generated/api";
 
 type Verdict = "fresh" | "mixed" | "likely_slop" | "peak_slop";
 
-const euro = new Intl.NumberFormat("de-DE", {
-  style: "currency",
-  currency: "EUR",
-});
+type LiveRevenue = {
+  currency: string;
+  grossRevenueCents: number;
+  refundedCents: number;
+  netRevenueCents: number;
+  grossLast30DaysCents: number;
+  refundedLast30DaysCents: number;
+  netLast30DaysCents: number;
+  paidCount: number;
+  refundCount: number;
+  livemode: boolean;
+  fetchedAt: number;
+};
 
 const dateTime = new Intl.DateTimeFormat("de-DE", {
   dateStyle: "medium",
@@ -41,8 +51,11 @@ const verdictRows: Array<{
   { key: "peakSlop", label: "Peak slop", verdict: "peak_slop" },
 ];
 
-function formatEuro(cents: number): string {
-  return euro.format(cents / 100);
+function formatMoney(cents: number, currency: string): string {
+  return new Intl.NumberFormat("de-DE", {
+    style: "currency",
+    currency: currency.toUpperCase(),
+  }).format(cents / 100);
 }
 
 function formatDate(timestamp: number): string {
@@ -100,6 +113,43 @@ export default function OwnerDashboard() {
 
 function OwnerStats({ now }: { now: number }) {
   const overview = useQuery(api.owner.overview, { now });
+  const feedback = useQuery(
+    api.feedback.listForOwner,
+    overview ? { limit: 50 } : "skip",
+  );
+  const getLiveRevenue = useAction(api.stripeAnalytics.getLiveRevenue);
+  const [liveRevenue, setLiveRevenue] = useState<
+    LiveRevenue | null | undefined
+  >(undefined);
+  const [stripeError, setStripeError] = useState<string | null>(null);
+  const stripeRequestStarted = useRef(false);
+
+  useEffect(() => {
+    if (
+      overview === undefined ||
+      overview === null ||
+      stripeRequestStarted.current
+    ) {
+      return;
+    }
+
+    stripeRequestStarted.current = true;
+    void getLiveRevenue({ now })
+      .then((revenue) => {
+        setLiveRevenue(revenue);
+        if (revenue === null) {
+          setStripeError("Stripe revenue is not available for this account");
+        }
+      })
+      .catch((error: unknown) => {
+        setLiveRevenue(null);
+        setStripeError(
+          error instanceof Error
+            ? error.message
+            : "Could not load Stripe live revenue",
+        );
+      });
+  }, [getLiveRevenue, now, overview]);
 
   if (overview === undefined) {
     return (
@@ -185,9 +235,24 @@ function OwnerStats({ now }: { now: number }) {
           tone="pink"
         />
         <StatCard
-          label="Paid revenue"
-          value={formatEuro(overview.revenue.paidRevenueCents)}
-          detail={`${overview.revenue.paidCount} paid unlocks · ${formatEuro(overview.revenue.paidLast30DaysCents)} in 30d`}
+          label="Stripe revenue · live"
+          value={
+            liveRevenue
+              ? formatMoney(
+                  liveRevenue.netRevenueCents,
+                  liveRevenue.currency,
+                )
+              : liveRevenue === undefined
+                ? "…"
+                : "—"
+          }
+          detail={
+            stripeError
+              ? stripeError
+              : liveRevenue
+                ? `Net · ${liveRevenue.paidCount} paid checkouts · ${formatMoney(liveRevenue.netLast30DaysCents, liveRevenue.currency)} in 30d`
+                : "Loading live Stripe data…"
+          }
           tone="white"
         />
       </section>
@@ -254,7 +319,13 @@ function OwnerStats({ now }: { now: number }) {
           </div>
           <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm font-bold text-[var(--ink)]/60">
             <span>{overview.scans.failed} failed scans</span>
-            <span>{overview.revenue.refundedCount} refunds</span>
+            <span>
+              {liveRevenue
+                ? `${liveRevenue.refundCount} Stripe refunds`
+                : stripeError
+                  ? "Stripe refunds unavailable"
+                  : "Loading Stripe refunds…"}
+            </span>
           </div>
         </div>
       </section>
@@ -299,6 +370,70 @@ function OwnerStats({ now }: { now: number }) {
                       {scan.score ?? "—"}
                     </span>
                   </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="overflow-hidden rounded-[2rem] border-[3px] border-[var(--ink)] bg-white shadow-[5px_6px_0_var(--ink)]">
+        <div className="flex flex-wrap items-end justify-between gap-3 border-b-[3px] border-[var(--ink)] p-5 sm:p-6">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--ink)]/45">
+              Customer voice
+            </p>
+            <h2 className="mt-1 font-[family-name:var(--font-display)] text-3xl font-black">
+              Feedback inbox
+            </h2>
+          </div>
+          <span className="rounded-full border-2 border-[var(--ink)] bg-[var(--accent-3)] px-3 py-1 text-xs font-black">
+            Latest {feedback?.length ?? "…"}
+          </span>
+        </div>
+
+        {feedback === undefined ? (
+          <p className="p-6 animate-squish font-bold text-[var(--ink)]/55">
+            Loading feedback…
+          </p>
+        ) : feedback.length === 0 ? (
+          <p className="p-6 font-bold text-[var(--ink)]/55">
+            No feedback yet. Paid customers will appear here.
+          </p>
+        ) : (
+          <ul className="divide-y-[3px] divide-[var(--ink)]">
+            {feedback.map((item) => (
+              <li key={item._id} className="p-5 sm:p-6">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <h3 className="font-[family-name:var(--font-display)] text-2xl font-black">
+                      {item.title}
+                    </h3>
+                    <p className="mt-1 text-xs font-bold uppercase tracking-wide text-[var(--ink)]/45">
+                      {formatDate(item.createdAt)} ·{" "}
+                      {item.scanId ? "attached to scan" : "general feedback"}
+                    </p>
+                  </div>
+                  <span className="rounded-full border-2 border-[var(--ink)] bg-[var(--accent)] px-3 py-1 text-xs font-black">
+                    Paid user
+                  </span>
+                </div>
+                <p className="mt-4 whitespace-pre-wrap text-sm font-semibold leading-6 text-[var(--ink)]/80">
+                  {item.message}
+                </p>
+                <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm font-bold text-[var(--ink)]/60">
+                  {item.email ? (
+                    <a
+                      href={`mailto:${item.email}`}
+                      className="underline decoration-2 underline-offset-2"
+                    >
+                      {item.email}
+                    </a>
+                  ) : null}
+                  {item.twitter ? <span>X/Twitter: {item.twitter}</span> : null}
+                  {!item.email && !item.twitter ? (
+                    <span>User · {item.userId.slice(-8)}</span>
+                  ) : null}
                 </div>
               </li>
             ))}
