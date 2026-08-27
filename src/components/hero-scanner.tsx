@@ -4,6 +4,8 @@ import { SignInButton, SignUpButton, Show } from "@clerk/nextjs";
 import { useAction } from "convex/react";
 import { useEffect, useState, useTransition } from "react";
 import { api } from "../../convex/_generated/api";
+import type { Id } from "../../convex/_generated/dataModel";
+import { ShareForFreeButton } from "@/components/share-for-free-button";
 import { ShareScoreButton } from "@/components/share-score-button";
 import type { GuestScan } from "@/lib/guest-storage";
 import {
@@ -71,8 +73,8 @@ export function HeroScanner() {
             </span>
           </h1>
           <p className="mt-4 max-w-xl text-base font-medium text-[var(--ink)]/75 sm:text-lg">
-            Paste a URL. We screenshot it, score the UI, then unlock fix prompts
-            after you sign in and pay.
+            Paste a URL. We screenshot it, score the UI, then unlock the full
+            analysis by sharing your score on X or paying.
           </p>
 
           <form
@@ -184,13 +186,22 @@ function TeaserResult({ scan }: { scan: GuestScan }) {
 
         <div className="flex flex-col gap-3 sm:items-end">
           {scan.scanId ? (
-            <ShareScoreButton
-              scanId={scan.scanId}
-              guestKey={scan.guestKey}
-              score={scan.estimatedScore}
-              verdict={scan.verdict}
-              url={scan.normalizedUrl}
-            />
+            <>
+              <Show when="signed-in">
+                <ShareForFreeButton
+                  scanId={scan.scanId as Id<"scans">}
+                />
+              </Show>
+              <Show when="signed-out">
+                <ShareScoreButton
+                  scanId={scan.scanId}
+                  guestKey={scan.guestKey}
+                  score={scan.estimatedScore}
+                  verdict={scan.verdict}
+                  url={scan.normalizedUrl}
+                />
+              </Show>
+            </>
           ) : null}
           <AuthGate scanId={scan.scanId} />
         </div>
@@ -229,7 +240,8 @@ function TeaserResult({ scan }: { scan: GuestScan }) {
             <div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-t from-white via-white/40 to-transparent" />
           </div>
           <p className="mt-3 text-xs font-bold text-[var(--ink)]/55">
-            Sign up to save this scan — then unlock the full review for €5.
+            Sign up to save this scan — then share your score on X for a free
+            full review, or unlock it for €5.
           </p>
         </div>
       </div>

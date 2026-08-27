@@ -50,12 +50,28 @@ export default defineSchema({
     mobileScreenshotStorageId: v.optional(v.id("_storage")),
     errorMessage: v.optional(v.string()),
     sharedAt: v.optional(v.number()),
+    freeReviewClaimedAt: v.optional(v.number()),
+    xPostId: v.optional(v.string()),
+    xAuthorId: v.optional(v.string()),
+    xVerifiedAt: v.optional(v.number()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
     .index("by_user", ["userId"])
     .index("by_guest_key", ["guestKey"])
     .index("by_user_and_created", ["userId", "createdAt"]),
+
+  xShareChallenges: defineTable({
+    state: v.string(),
+    codeVerifier: v.string(),
+    scanId: v.id("scans"),
+    userId: v.id("users"),
+    postText: v.string(),
+    createdAt: v.number(),
+    expiresAt: v.number(),
+  })
+    .index("by_state", ["state"])
+    .index("by_scan", ["scanId"]),
 
   payments: defineTable({
     scanId: v.id("scans"),

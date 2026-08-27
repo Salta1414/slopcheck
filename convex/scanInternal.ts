@@ -135,7 +135,7 @@ export const markPaidAndQueueReview = internalMutation({
       )
       .unique();
 
-    let scanId: Id<"scans"> | null = payment?.scanId ?? args.scanId ?? null;
+    const scanId: Id<"scans"> | null = payment?.scanId ?? args.scanId ?? null;
     if (!scanId) return null;
 
     const scan = await ctx.db.get(scanId);
@@ -153,7 +153,11 @@ export const markPaidAndQueueReview = internalMutation({
       });
     }
 
-    if (scan.status === "ready" || scan.status === "full_review_running") {
+    if (
+      scan.status === "ready" ||
+      scan.status === "paid" ||
+      scan.status === "full_review_running"
+    ) {
       return { scanId, alreadyPaid: true };
     }
 

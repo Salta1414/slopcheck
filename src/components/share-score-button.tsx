@@ -5,7 +5,7 @@ import { useState } from "react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import type { SlopVerdict } from "@/lib/guest-storage";
-import { shareText, shareUrl } from "@/lib/share-score";
+import { shareText, shareUrl, xPostUrl } from "@/lib/share-score";
 
 type Status = "idle" | "working" | "ready" | "copied" | "error";
 
@@ -104,7 +104,7 @@ export function ShareScoreButton({
               Copy link
             </button>
             <a
-              href={`https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(link)}`}
+              href={xPostUrl(text, link)}
               target="_blank"
               rel="noreferrer"
               className="rounded-full border-[3px] border-[var(--ink)] bg-white px-4 py-2.5 text-sm font-black text-[var(--ink)] shadow-[3px_3px_0_var(--ink)] transition hover:translate-y-[1px] hover:shadow-[2px_2px_0_var(--ink)]"

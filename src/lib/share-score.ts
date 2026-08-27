@@ -69,3 +69,7 @@ export function shareText({
   const band = verdict ?? verdictFromScore(score);
   return `${prettyHost(url)} scored ${score}/100 on the AI slop check — ${verdictLabel(band)} ${verdictEmoji(band)}`;
 }
+
+export function xPostUrl(text: string, url: string): string {
+  return `https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
+}

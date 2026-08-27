@@ -54,6 +54,7 @@ export const getScanInternal = internalQuery({
       estimatedScore: v.optional(v.number()),
       score: v.optional(v.number()),
       verdict: v.optional(verdictValidator),
+      freeReviewClaimedAt: v.optional(v.number()),
       screenshotStorageId: v.optional(v.id("_storage")),
     }),
     v.null(),
@@ -70,6 +71,7 @@ export const getScanInternal = internalQuery({
       estimatedScore: scan.estimatedScore,
       score: scan.score,
       verdict: scan.verdict,
+      freeReviewClaimedAt: scan.freeReviewClaimedAt,
       screenshotStorageId: scan.screenshotStorageId,
     };
   },
@@ -129,6 +131,7 @@ export const getMine = query({
       lockedFindings: v.optional(v.array(v.string())),
       lockedPrompts: v.optional(v.array(v.string())),
       errorMessage: v.optional(v.string()),
+      freeReviewClaimed: v.boolean(),
       createdAt: v.number(),
       review: v.union(
         v.object({
@@ -177,6 +180,7 @@ export const getMine = query({
       lockedFindings: unlocked ? undefined : scan.lockedFindings,
       lockedPrompts: unlocked ? undefined : scan.lockedPrompts,
       errorMessage: scan.errorMessage,
+      freeReviewClaimed: scan.freeReviewClaimedAt !== undefined,
       createdAt: scan.createdAt,
       review: reviewDoc
         ? {

@@ -26,7 +26,7 @@ const STEPS = [
   {
     n: "03",
     title: "Unlock the fix kit",
-    body: `Sign up, pay ${siteLegal.priceLabel}, grab Opus-level prompts.`,
+    body: `Sign up, pay ${siteLegal.priceLabel} — or post your score on X and get the full review free.`,
     rot: "-1deg",
     bg: "var(--accent-2)",
   },
@@ -47,7 +47,7 @@ const FAQS = [
   },
   {
     q: "What do I get for €5?",
-    a: "The strong full review: score, concrete findings, and copy-paste fix prompts for tools like Claude / Cursor.",
+    a: "The strong full review: score, concrete findings, and copy-paste fix prompts for tools like Claude / Cursor. Share your score on X to get it free.",
   },
   {
     q: "Is this legal advice or a design guarantee?",
@@ -214,7 +214,7 @@ export function LandingSections() {
           </p>
           <p className="relative z-10 mt-3 max-w-md text-base font-bold text-[var(--ink)]/75">
             Screenshot → deep critique → copy-paste prompts. No subscription.
-            Just less slop.
+            Share your score on X and the full review is free.
           </p>
           <a
             href="#site-url"
