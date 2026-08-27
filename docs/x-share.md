@@ -9,7 +9,8 @@ does not publish posts through the X API, so this flow does not require
 1. Slopcheck creates a short-lived post challenge with a unique proof code.
 2. The user copies the prepared text and opens X's post composer.
 3. The user publishes the post on X.
-4. The user uploads a screenshot showing the published post.
+4. The user uploads a screenshot showing the published post, either by
+   choosing an image or pasting it from the clipboard with Ctrl/Cmd + V.
 5. A vision check looks for the published X UI, score, public scan link,
    `#slopcheck`, and the one-time proof code.
 6. The challenge is consumed and the full review is queued atomically.
@@ -26,7 +27,8 @@ not read them.
 
 ## Notes
 
-- Accepted uploads: PNG, JPEG, and WebP up to 8 MB.
+- Accepted uploads: PNG, JPEG, and WebP up to 8 MB. Clipboard paste works for
+  image data copied from a screenshot tool or image editor.
 - Uploaded screenshots are deleted after verification or challenge expiry.
 - A rejected screenshot consumes that challenge; the user can prepare a new
   challenge and try again.

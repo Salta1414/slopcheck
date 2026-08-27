@@ -1,7 +1,12 @@
 "use client";
 
 import { useAction, useMutation } from "convex/react";
-import { useId, useState } from "react";
+import {
+  useId,
+  useState,
+  type ChangeEvent,
+  type ClipboardEvent,
+} from "react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 
@@ -63,12 +68,8 @@ export function ShareForFreeButton({ scanId }: { scanId: Id<"scans"> }) {
     }
   }
 
-  async function onScreenshotSelected(
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) {
-    const file = event.target.files?.[0];
-    event.target.value = "";
-    if (!file || !challenge) return;
+  async function uploadScreenshot(file: File) {
+    if (!challenge) return;
 
     if (!ALLOWED_IMAGE_TYPES.has(file.type) || file.size > MAX_SCREENSHOT_BYTES) {
       setStatus("error");
@@ -121,6 +122,23 @@ export function ShareForFreeButton({ scanId }: { scanId: Id<"scans"> }) {
       setChallenge(null);
       setStatus("error");
     }
+  }
+
+  function onScreenshotSelected(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (file) void uploadScreenshot(file);
+  }
+
+  function onScreenshotPaste(event: ClipboardEvent<HTMLDivElement>) {
+    const item = Array.from(event.clipboardData.items).find((entry) =>
+      ALLOWED_IMAGE_TYPES.has(entry.type),
+    );
+    const file = item?.getAsFile();
+    if (!file) return;
+
+    event.preventDefault();
+    void uploadScreenshot(file);
   }
 
   const showChallenge =
@@ -179,12 +197,21 @@ export function ShareForFreeButton({ scanId }: { scanId: Id<"scans"> }) {
                 Open X
               </a>
             </div>
-            <label
-              htmlFor={`share-screenshot-${inputId}`}
-              className="block cursor-pointer rounded-2xl border-[3px] border-dashed border-[var(--ink)] bg-white px-3 py-3 text-center text-xs font-black text-[var(--ink)] transition hover:bg-[var(--accent)]/20"
+            <div
+              role="button"
+              tabIndex={0}
+              onPaste={onScreenshotPaste}
+              aria-label="Paste screenshot from clipboard"
+              className="rounded-2xl border-[3px] border-dashed border-[var(--ink)] bg-white px-3 py-3 text-center text-xs font-black text-[var(--ink)] outline-none transition focus:ring-4 focus:ring-[var(--accent)]/50"
             >
-              Upload screenshot of published post
-            </label>
+              <p>Paste screenshot here with Ctrl/Cmd + V</p>
+              <label
+                htmlFor={`share-screenshot-${inputId}`}
+                className="mt-2 inline-block cursor-pointer rounded-full border-[2px] border-[var(--ink)] bg-[var(--accent)] px-3 py-1.5 text-[var(--ink)] shadow-[2px_2px_0_var(--ink)] transition hover:translate-y-[1px] hover:shadow-[1px_1px_0_var(--ink)]"
+              >
+                Or choose an image
+              </label>
+            </div>
             <input
               id={`share-screenshot-${inputId}`}
               type="file"
