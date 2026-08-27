@@ -43,6 +43,13 @@ type XPostResponse = {
   data?: { id?: unknown; text?: unknown; author_id?: unknown };
 };
 
+type XApiErrorResponse = {
+  title?: unknown;
+  detail?: unknown;
+  type?: unknown;
+  errors?: unknown;
+};
+
 type CompleteXShareResult = {
   scanId: Id<"scans">;
   status:
@@ -59,6 +66,27 @@ async function readJson(response: Response): Promise<unknown> {
   } catch {
     return null;
   }
+}
+
+function errorSummary(response: Response, body: unknown) {
+  const json = body as XApiErrorResponse;
+  return {
+    status: response.status,
+    title: typeof json?.title === "string" ? json.title : undefined,
+    detail: typeof json?.detail === "string" ? json.detail : undefined,
+    type: typeof json?.type === "string" ? json.type : undefined,
+    errors: Array.isArray(json?.errors)
+      ? json.errors.slice(0, 3).map((error) => {
+          const item = error as Record<string, unknown>;
+          return {
+            title: typeof item.title === "string" ? item.title : undefined,
+            detail: typeof item.detail === "string" ? item.detail : undefined,
+            type: typeof item.type === "string" ? item.type : undefined,
+            status: typeof item.status === "number" ? item.status : undefined,
+          };
+        })
+      : undefined,
+  };
 }
 
 /** Exchange the callback code, create the post, verify it, then queue review. */
@@ -134,6 +162,10 @@ export const completeXShare = internalAction({
       const xPostId =
         typeof postJson.data?.id === "string" ? postJson.data.id : null;
       if (!postResponse.ok || !xPostId) {
+        console.error("X post request rejected", {
+          scanId: challenge.scanId,
+          ...errorSummary(postResponse, postJson),
+        });
         throw new Error("X post creation failed");
       }
 
