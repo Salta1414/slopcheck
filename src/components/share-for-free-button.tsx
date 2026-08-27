@@ -220,8 +220,8 @@ export function ShareForFreeButton({ scanId }: { scanId: Id<"scans"> }) {
               className="sr-only"
             />
             <p className="text-[11px] font-bold text-[var(--ink)]/45">
-              Post it first — a composer draft will not count. Challenge expires
-              in 15 minutes.
+              Post it first — a composer draft will not count. If verification
+              fails, prepare this same post again; your scan code stays the same.
             </p>
           </div>
         ) : null}
@@ -244,7 +244,7 @@ export function ShareForFreeButton({ scanId }: { scanId: Id<"scans"> }) {
       {status === "rejected" ? (
         <p className="text-right text-xs font-bold text-[var(--accent-2)]" role="alert">
           We could not verify that screenshot. Make sure the published post and
-          the one-time code are visible, then try again.
+          the scan code are visible, then prepare the same post and try again.
         </p>
       ) : null}
       {status === "expired" ? (

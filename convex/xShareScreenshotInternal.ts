@@ -18,6 +18,12 @@ const challengeValidator = v.object({
   expiresAt: v.number(),
 });
 
+const challengeReferenceValidator = v.object({
+  challengeId: v.id("screenshotShareChallenges"),
+  postText: v.string(),
+  expiresAt: v.number(),
+});
+
 async function deleteChallenge(
   ctx: MutationCtx,
   challenge: Doc<"screenshotShareChallenges">,
@@ -27,6 +33,37 @@ async function deleteChallenge(
   }
   await ctx.db.delete(challenge._id);
 }
+
+export const ensureProof = internalMutation({
+  args: {
+    scanId: v.id("scans"),
+    userId: v.id("users"),
+    candidateProof: v.string(),
+  },
+  returns: v.string(),
+  handler: async (ctx, args) => {
+    const scan = await ctx.db.get(args.scanId);
+    if (!scan || scan.userId !== args.userId) {
+      throw new Error("Scan not found");
+    }
+    if (scan.xShareProof) return scan.xShareProof;
+
+    const activeChallenges = (
+      await ctx.db
+        .query("screenshotShareChallenges")
+        .withIndex("by_scan", (q) => q.eq("scanId", args.scanId))
+        .collect()
+    )
+      .filter((challenge) => challenge.expiresAt >= Date.now())
+      .sort((a, b) => b.createdAt - a.createdAt);
+    const proof = activeChallenges[0]?.proof ?? args.candidateProof;
+    await ctx.db.patch(scan._id, {
+      xShareProof: proof,
+      updatedAt: Date.now(),
+    });
+    return proof;
+  },
+});
 
 export const createChallenge = internalMutation({
   args: {
@@ -39,7 +76,7 @@ export const createChallenge = internalMutation({
     createdAt: v.number(),
     expiresAt: v.number(),
   },
-  returns: v.id("screenshotShareChallenges"),
+  returns: challengeReferenceValidator,
   handler: async (ctx, args) => {
     const scan = await ctx.db.get(args.scanId);
     if (!scan || scan.userId !== args.userId) {
@@ -50,6 +87,17 @@ export const createChallenge = internalMutation({
       .query("screenshotShareChallenges")
       .withIndex("by_scan", (q) => q.eq("scanId", args.scanId))
       .collect();
+    const active = existing
+      .filter((challenge) => challenge.expiresAt >= Date.now())
+      .sort((a, b) => b.createdAt - a.createdAt)[0];
+    if (active) {
+      return {
+        challengeId: active._id,
+        postText: active.postText,
+        expiresAt: active.expiresAt,
+      };
+    }
+
     await Promise.all(existing.map((challenge) => deleteChallenge(ctx, challenge)));
 
     const challengeId = await ctx.db.insert("screenshotShareChallenges", args);
@@ -58,7 +106,11 @@ export const createChallenge = internalMutation({
       internal.xShareScreenshotInternal.consumeChallenge,
       { challengeId },
     );
-    return challengeId;
+    return {
+      challengeId,
+      postText: args.postText,
+      expiresAt: args.expiresAt,
+    };
   },
 });
 

@@ -212,7 +212,14 @@ export const beginScreenshotShare = action({
       throw new Error("This scan is not ready to share yet");
     }
 
-    const proof = randomProof();
+    const proof = await ctx.runMutation(
+      internal.xShareScreenshotInternal.ensureProof,
+      {
+        scanId: args.scanId,
+        userId,
+        candidateProof: randomProof(),
+      },
+    );
     const expiresAt = Date.now() + CHALLENGE_TTL_MS;
     const publicUrl = `${appUrl()}/s/${args.scanId}`;
     const text = postText({
@@ -222,7 +229,7 @@ export const beginScreenshotShare = action({
       publicUrl,
       proof,
     });
-    const challengeId = await ctx.runMutation(
+    const challenge = await ctx.runMutation(
       internal.xShareScreenshotInternal.createChallenge,
       {
         scanId: args.scanId,
@@ -236,12 +243,12 @@ export const beginScreenshotShare = action({
       },
     );
 
-    const intentParams = new URLSearchParams({ text });
+    const intentParams = new URLSearchParams({ text: challenge.postText });
     return {
-      challengeId,
-      postText: text,
+      challengeId: challenge.challengeId,
+      postText: challenge.postText,
       xIntentUrl: `${X_INTENT_URL}?${intentParams.toString()}`,
-      expiresAt,
+      expiresAt: challenge.expiresAt,
     };
   },
 });
@@ -306,7 +313,7 @@ export const verifyScreenshot = action({
           "Check this screenshot for the expected Slopcheck post.",
           `Expected score fragment: ${challenge.expectedScore}/100`,
           `Expected public link: ${challenge.expectedUrl}`,
-          `Expected one-time proof code: ${challenge.proof}`,
+          `Expected stable scan proof code: ${challenge.proof}`,
           "The screenshot must show the post as published on X, not merely in the composer.",
         ].join("\n"),
         imagesBase64Png: [screenshotBase64],
