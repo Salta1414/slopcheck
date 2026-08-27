@@ -40,6 +40,7 @@ export const getChallenge = internalQuery({
   returns: v.union(
     v.object({
       _id: v.id("xShareChallenges"),
+      _creationTime: v.number(),
       state: v.string(),
       codeVerifier: v.string(),
       scanId: v.id("scans"),
