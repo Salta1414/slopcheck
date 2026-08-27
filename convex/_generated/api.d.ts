@@ -23,9 +23,9 @@ import type * as scans from "../scans.js";
 import type * as share from "../share.js";
 import type * as stripeAnalytics from "../stripeAnalytics.js";
 import type * as users from "../users.js";
-import type * as xShare from "../xShare.js";
-import type * as xShareCallback from "../xShareCallback.js";
-import type * as xShareInternal from "../xShareInternal.js";
+import type * as xShareScreenshot from "../xShareScreenshot.js";
+import type * as xShareScreenshotInternal from "../xShareScreenshotInternal.js";
+import type * as xShareScreenshotUpload from "../xShareScreenshotUpload.js";
 
 import type {
   ApiFromModules,
@@ -49,9 +49,9 @@ declare const fullApi: ApiFromModules<{
   share: typeof share;
   stripeAnalytics: typeof stripeAnalytics;
   users: typeof users;
-  xShare: typeof xShare;
-  xShareCallback: typeof xShareCallback;
-  xShareInternal: typeof xShareInternal;
+  xShareScreenshot: typeof xShareScreenshot;
+  xShareScreenshotInternal: typeof xShareScreenshotInternal;
+  xShareScreenshotUpload: typeof xShareScreenshotUpload;
 }>;
 
 /**

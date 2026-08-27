@@ -16,9 +16,6 @@ export default function ScanDetailClient() {
   const scanId = params.scanId as Id<"scans">;
   const paid = searchParams.get("paid") === "1";
   const canceled = searchParams.get("canceled") === "1";
-  const xShared = searchParams.get("x_shared") === "1";
-  const xShareCanceled = searchParams.get("x_share_canceled") === "1";
-  const xShareError = searchParams.get("x_share_error") === "1";
 
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6">
@@ -43,9 +40,6 @@ export default function ScanDetailClient() {
           scanId={scanId}
           paidBanner={paid}
           canceledBanner={canceled}
-          xSharedBanner={xShared}
-          xShareCanceledBanner={xShareCanceled}
-          xShareErrorBanner={xShareError}
         />
       </Show>
     </div>
@@ -56,16 +50,10 @@ function ScanDetailBody({
   scanId,
   paidBanner,
   canceledBanner,
-  xSharedBanner,
-  xShareCanceledBanner,
-  xShareErrorBanner,
 }: {
   scanId: Id<"scans">;
   paidBanner: boolean;
   canceledBanner: boolean;
-  xSharedBanner: boolean;
-  xShareCanceledBanner: boolean;
-  xShareErrorBanner: boolean;
 }) {
   const scan = useQuery(api.scans.getMine, { scanId });
 
@@ -129,22 +117,6 @@ function ScanDetailBody({
           Checkout canceled — you can try again anytime.
         </p>
       ) : null}
-      {xSharedBanner ? (
-        <p className="rounded-2xl border-[3px] border-[var(--ink)] bg-[var(--accent)]/40 px-4 py-3 text-sm font-extrabold">
-          X post verified — your free full analysis is cooking now.
-        </p>
-      ) : null}
-      {xShareCanceledBanner ? (
-        <p className="rounded-2xl border-[3px] border-[var(--ink)] bg-[var(--accent-2)]/20 px-4 py-3 text-sm font-extrabold">
-          X sharing was canceled — no free review was claimed.
-        </p>
-      ) : null}
-      {xShareErrorBanner ? (
-        <p className="rounded-2xl border-[3px] border-[var(--ink)] bg-[var(--accent-2)]/20 px-4 py-3 text-sm font-extrabold">
-          We could not verify the X post. No free review was claimed; try again.
-        </p>
-      ) : null}
-
       {scan.review ? (
         <ScanReport
           scanId={scan._id}

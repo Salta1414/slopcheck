@@ -1,44 +1,32 @@
-# X share-for-free
+# Screenshot share-for-free
 
-The free full review is granted only after the server has:
+The free full review uses a manual X post and screenshot verification. Slopcheck
+does not publish posts through the X API, so this flow does not require
+`tweet.write`, X client credentials, or X API credits.
 
-1. completed X OAuth 2.0 with PKCE;
-2. created the post through `POST /2/tweets` using the connected account;
-3. read the returned post back and matched its ID, author ID, and exact text;
-4. atomically marked the scan as claimed and queued the full review.
+## User flow
 
-No X access token is stored. The PKCE challenge is short-lived and is removed
-after completion or cancellation.
+1. Slopcheck creates a short-lived post challenge with a unique proof code.
+2. The user copies the prepared text and opens X's post composer.
+3. The user publishes the post on X.
+4. The user uploads a screenshot showing the published post.
+5. A vision check looks for the published X UI, score, public scan link,
+   `#slopcheck`, and the one-time proof code.
+6. The challenge is consumed and the full review is queued atomically.
 
-## X developer app
-
-Create an X OAuth 2.0 app with these scopes:
-
-- `tweet.read`
-- `tweet.write`
-- `users.read`
-
-Register this exact callback URL in the X app:
-
-```text
-https://glad-peccary-227.eu-west-1.convex.site/x/share/callback
-```
-
-The callback must match character-for-character. Use the Convex HTTP Actions
-URL for the deployment. For a custom callback URL, set `X_OAUTH_REDIRECT_URI`
-to that exact value in the same Convex environment.
+Screenshot verification is intentionally a lightweight anti-abuse measure, not
+cryptographic proof. Challenges expire after 15 minutes and only one successful
+free claim is allowed per scan.
 
 ## Convex environment
 
-Set the public X client ID and the frontend URL on each deployment separately:
+Only the existing AI environment is needed. Remove the old X credentials from
+the Convex Production environment when convenient; the screenshot flow does
+not read them.
 
-```bash
-npx convex env set X_CLIENT_ID <x-client-id> --prod
-npx convex env set X_CLIENT_SECRET <x-client-secret> --prod
-npx convex env set APP_URL https://slopcheck.dev --prod
-```
+## Notes
 
-For development, use the development deployment and its matching frontend URL.
-Never copy an X client secret into the frontend or into a `NEXT_PUBLIC_*`
-variable. This flow intentionally uses PKCE and keeps the user access token
-inside the server action only.
+- Accepted uploads: PNG, JPEG, and WebP up to 8 MB.
+- Uploaded screenshots are deleted after verification or challenge expiry.
+- A rejected screenshot consumes that challenge; the user can prepare a new
+  challenge and try again.

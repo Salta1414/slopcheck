@@ -54,6 +54,10 @@ export default defineSchema({
     xPostId: v.optional(v.string()),
     xAuthorId: v.optional(v.string()),
     xVerifiedAt: v.optional(v.number()),
+    xShareMethod: v.optional(
+      v.union(v.literal("api"), v.literal("screenshot")),
+    ),
+    xShareProof: v.optional(v.string()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
@@ -72,6 +76,20 @@ export default defineSchema({
   })
     .index("by_state", ["state"])
     .index("by_scan", ["scanId"]),
+
+  screenshotShareChallenges: defineTable({
+    scanId: v.id("scans"),
+    userId: v.id("users"),
+    proof: v.string(),
+    postText: v.string(),
+    expectedScore: v.number(),
+    expectedUrl: v.string(),
+    screenshotStorageId: v.optional(v.id("_storage")),
+    createdAt: v.number(),
+    expiresAt: v.number(),
+  })
+    .index("by_scan", ["scanId"])
+    .index("by_user", ["userId"]),
 
   payments: defineTable({
     scanId: v.id("scans"),

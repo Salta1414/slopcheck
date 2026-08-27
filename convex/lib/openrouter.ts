@@ -108,6 +108,7 @@ export async function openRouterVisionJson(args: {
   system: string;
   userText: string;
   imagesBase64Png: string[];
+  imageMimeTypes?: string[];
 }): Promise<string> {
   const apiKey = requireOpenRouterKey();
 
@@ -116,9 +117,11 @@ export async function openRouterVisionJson(args: {
       type: "text",
       text: `${args.userText}\n\nRespond with a single JSON object only — no markdown fences.`,
     },
-    ...args.imagesBase64Png.map((b64) => ({
+    ...args.imagesBase64Png.map((b64, index) => ({
       type: "image_url" as const,
-      image_url: { url: `data:image/png;base64,${b64}` },
+      image_url: {
+        url: `data:${args.imageMimeTypes?.[index] ?? "image/png"};base64,${b64}`,
+      },
     })),
   ];
 
