@@ -42,6 +42,85 @@ export type CaptureOpts = {
   viewport?: CaptureViewport;
 };
 
+export type ReviewCapture = {
+  base64: string;
+  provider: string;
+  frames: string[];
+  labels: string[];
+};
+
+/** Sample time and scroll in ONE browser session, never compare independent reloads as motion. */
+export async function captureReviewFrames(targetUrl: string): Promise<ReviewCapture> {
+  const token = process.env.BROWSERLESS_API_TOKEN;
+  if (token) {
+    try {
+      const base = (process.env.BROWSERLESS_BASE_URL ?? DEFAULT_BROWSERLESS_BASE).replace(/\/$/, "");
+      const endpoint = new URL(`${base}/function`);
+      endpoint.searchParams.set("token", token);
+      endpoint.searchParams.set("timeout", "60000");
+      const res = await fetch(endpoint, {
+        method: "POST",
+        signal: AbortSignal.timeout(60000),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          context: { url: targetUrl, viewport: VIEWPORTS.desktop },
+          code: `export default async ({ page, context }) => {
+            const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+            await page.setViewport(context.viewport);
+            await page.goto(context.url, { waitUntil: "domcontentloaded", timeout: 25000 });
+            // Live dashboards and streaming connections may never become idle.
+            await page.waitForNetworkIdle({ idleTime: 500, timeout: 5000 }).catch(() => {});
+            await page.evaluate(async () => {
+              await Promise.race([document.fonts.ready, new Promise(r => setTimeout(r, 2000))]);
+              window.scrollTo(0, Math.min(document.body.scrollHeight * 0.35, 1200));
+            });
+            await sleep(600);
+            await page.evaluate(() => window.scrollTo(0, 0));
+            await sleep(2500);
+            const frames = [];
+            const labels = [];
+            const capture = async label => {
+              frames.push(await page.screenshot({ type: "png", encoding: "base64", fullPage: false }));
+              labels.push(label);
+            };
+            await capture("Desktop 1440x900: settled hero, t=0");
+            await sleep(1500);
+            await capture("Desktop same session and scroll position, t≈+1.5s (not a video)");
+            await page.evaluate(() => {
+              window.scrollTo(0, Math.min(window.innerHeight * 0.65, document.documentElement.scrollHeight - window.innerHeight));
+            });
+            await sleep(1200);
+            const y = await page.evaluate(() => window.scrollY);
+            await capture("Desktop same session after scroll, actual y=" + y + "; scroll frame, not temporal proof");
+            return { data: { frames, labels }, type: "application/json" };
+          }`,
+        }),
+      });
+      if (!res.ok) throw new Error(`Capture sequence status ${res.status}`);
+      // Browserless versions differ: some unwrap the function's data, others retain the envelope.
+      const raw = await res.json() as { data?: unknown; frames?: unknown; labels?: unknown };
+      const data = (raw.data && typeof raw.data === "object" ? raw.data : raw) as { frames?: unknown; labels?: unknown };
+      if (!Array.isArray(data.frames) || data.frames.length !== 3 ||
+          !data.frames.every(frame => typeof frame === "string" && Buffer.from(frame, "base64").subarray(0, 8).equals(Buffer.from([137,80,78,71,13,10,26,10]))) ||
+          !Array.isArray(data.labels) || data.labels.length !== 3 || !data.labels.every(label => typeof label === "string")) {
+        throw new Error("Invalid capture sequence");
+      }
+      return { base64: data.frames[0], frames: data.frames, labels: data.labels, provider: "browserless-sequence" };
+    } catch (error) {
+      // A plan without /function support must still be able to scan. Never log token-bearing URLs.
+      const reason = error instanceof Error && /^(Capture sequence status \d+|Invalid capture sequence)$/.test(error.message)
+        ? error.message : "request failed or timed out";
+      console.warn(`Sequence capture unavailable (${reason}); falling back to a single image.`);
+    }
+  }
+  const shot = await captureScreenshotBase64(targetUrl, { viewport: "desktop", fullPage: false });
+  return { ...shot, frames: [shot.base64], labels: ["Desktop single still only: motion and scroll not captured"] };
+}
+
+export function captureImageLabels(labels: string[]): string {
+  return labels.map((label, index) => `Image ${index + 1}: ${label}`).join("\n");
+}
+
 export async function captureScreenshotBase64(
   targetUrl: string,
   opts?: CaptureOpts,

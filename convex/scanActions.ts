@@ -11,10 +11,10 @@ import {
 } from "./lib/openrouter";
 import {
   PREEVAL_SYSTEM_PROMPT,
-  scoreToVerdict,
+  scoreAssessment,
   type SlopVerdict,
 } from "./lib/rubric";
-import { captureDesktopScreenshotBase64 } from "./lib/screenshots";
+import { captureReviewFrames, captureImageLabels } from "./lib/screenshots";
 
 const PRIVATE_HOST_RE =
   /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[0-1])\.|0\.0\.0\.0|::1|\[::1\])/i;
@@ -49,6 +49,7 @@ function normalizeAndValidateUrl(raw: string): string {
 }
 
 type PreevalJson = {
+  assessment?: unknown;
   estimatedScore?: unknown;
   verdict?: unknown;
   teaserFlags?: unknown;
@@ -66,7 +67,7 @@ function asStringArray(value: unknown, min: number, fallback: string[]): string[
   return cleaned;
 }
 
-function normalizePreeval(raw: unknown, host: string): {
+function normalizePreeval(raw: unknown): {
   estimatedScore: number;
   verdict: SlopVerdict;
   teaserFlags: string[];
@@ -74,42 +75,16 @@ function normalizePreeval(raw: unknown, host: string): {
   lockedPrompts: string[];
 } {
   const data = (raw ?? {}) as PreevalJson;
-  let score =
-    typeof data.estimatedScore === "number" && Number.isFinite(data.estimatedScore)
-      ? Math.round(data.estimatedScore)
-      : 55;
-  score = Math.max(0, Math.min(100, score));
-
-  const allowed: SlopVerdict[] = [
-    "fresh",
-    "mixed",
-    "likely_slop",
-    "peak_slop",
-  ];
-  const verdict =
-    typeof data.verdict === "string" &&
-    allowed.includes(data.verdict as SlopVerdict)
-      ? (data.verdict as SlopVerdict)
-      : scoreToVerdict(score);
+  const assessment = scoreAssessment(data.assessment);
 
   return {
-    estimatedScore: score,
-    verdict,
-    teaserFlags: asStringArray(data.teaserFlags, 1, [
-      `First viewport on ${host} shows generic SaaS patterns.`,
-      "Brand signal looks weak above the fold.",
-    ]).slice(0, 3),
-    lockedFindings: asStringArray(data.lockedFindings, 1, [
-      "Hero hierarchy feels template-driven.",
-      "Feature section likely uses a repetitive card grid.",
-      "Color system leans on default SaaS gradients.",
-      "CTA copy is vague and interchangeable.",
-    ]).slice(0, 6),
-    lockedPrompts: asStringArray(data.lockedPrompts, 1, [
-      "Cursor: rewrite the hero to lead with brand-specific proof.",
-      "v0: replace feature cards with one bold product demo strip.",
-      "Claude: propose a 4-color intentional palette (no purple-indigo default).",
-    ]).slice(0, 5),
+    estimatedScore: assessment.score,
+    verdict: assessment.verdict,
+    teaserFlags: [assessment.note, `Strength: ${assessment.strength}`,
+      ...asStringArray(data.teaserFlags, 0, []).slice(0, 1),
+      `Capture limits: ${assessment.limitation}`],
+    lockedFindings: [assessment.evidence, ...asStringArray(data.lockedFindings, 0, []).slice(0, 4)],
+    lockedPrompts: asStringArray(data.lockedPrompts, 0, []).slice(0, 3),
   };
 }
 
@@ -175,10 +150,7 @@ export const runPreeval = action({
     });
 
     try {
-      const shot = await captureDesktopScreenshotBase64(normalizedUrl, {
-        fullPage: false,
-      });
-      // Note: we wait ~3.5s + networkidle so lazy heroes/media can paint before scoring.
+      const shot = await captureReviewFrames(normalizedUrl);
 
       const bytes = Buffer.from(shot.base64, "base64");
       const storageId: Id<"_storage"> = await ctx.storage.store(
@@ -195,11 +167,11 @@ export const runPreeval = action({
       const content = await openRouterVisionJson({
         model,
         system: PREEVAL_SYSTEM_PROMPT,
-        userText: `Evaluate this website UI screenshot for AI slop.\nURL: ${normalizedUrl}\nHost: ${host}`,
-        imagesBase64Png: [shot.base64],
+        userText: `Evaluate this website UI.\nURL: ${normalizedUrl}\nHost: ${host}\n${captureImageLabels(shot.labels)}`,
+        imagesBase64Png: shot.frames,
       });
 
-      const parsed = normalizePreeval(parseJsonObject(content), host);
+      const parsed = normalizePreeval(parseJsonObject(content));
 
       const scanId: Id<"scans"> = await ctx.runMutation(
         internal.scanInternal.upsertGuestPreeval,

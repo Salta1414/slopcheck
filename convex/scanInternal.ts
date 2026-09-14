@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { internalMutation } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
+import { scoreToVerdict, type SlopVerdict } from "./lib/rubric";
 
 const verdictValidator = v.union(
   v.literal("fresh"),
@@ -246,12 +247,14 @@ export const saveFullReview = internalMutation({
     const scanPatch: {
       status: "ready";
       score: number;
+      verdict: SlopVerdict;
       updatedAt: number;
       screenshotStorageId?: Id<"_storage">;
       mobileScreenshotStorageId?: Id<"_storage">;
     } = {
       status: "ready",
       score: args.score,
+      verdict: scoreToVerdict(args.score),
       updatedAt: now,
     };
     if (args.screenshotStorageId) {

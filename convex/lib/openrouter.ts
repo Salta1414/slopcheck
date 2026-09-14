@@ -10,12 +10,12 @@ export function requireOpenRouterKey(): string {
 
 export function preevalModel(): string {
   // Fast vision default for free teaser scans — override via OPENROUTER_PREEVAL_MODEL
-  return process.env.OPENROUTER_PREEVAL_MODEL ?? "google/gemini-3.6-flash";
+  return process.env.OPENROUTER_PREEVAL_MODEL ?? "z-ai/glm-5.3-flash";
 }
 
 export function fullReviewModel(): string {
   return (
-    process.env.OPENROUTER_FULL_MODEL ?? "anthropic/claude-opus-5"
+    process.env.OPENROUTER_FULL_MODEL ?? "anthropic/claude-fable-5.1"
   );
 }
 
@@ -73,7 +73,8 @@ async function callOpenRouterVision(args: {
     },
     body: JSON.stringify({
       model: args.model,
-      temperature: 0.2,
+      // Fable does not advertise temperature support; let that route use its default.
+      ...(args.model === "anthropic/claude-fable-5.1" ? {} : { temperature: 0.2 }),
       ...(args.useJsonObjectFormat
         ? { response_format: { type: "json_object" } }
         : {}),

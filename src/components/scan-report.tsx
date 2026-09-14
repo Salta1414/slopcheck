@@ -58,7 +58,7 @@ export function ScanReport({
             url={url}
           />
         </div>
-        <p className="mt-4 text-base font-semibold text-[var(--ink)]/80">
+        <p className="mt-4 whitespace-pre-line text-base font-semibold text-[var(--ink)]/80">
           {summary}
         </p>
         <FeedbackButton scanId={scanId} />
@@ -68,6 +68,11 @@ export function ScanReport({
         <h2 className="font-[family-name:var(--font-display)] text-2xl font-extrabold text-[var(--ink)]">
           Findings
         </h2>
+        {findings.length === 0 && (
+          <p className="mt-4 text-sm font-medium text-[var(--ink)]/70">
+            No specific issues were supported by the supplied captures. See the review above for strengths and capture limits.
+          </p>
+        )}
         <ul className="mt-4 space-y-3">
           {findings.map((f) => (
             <li
@@ -100,6 +105,11 @@ export function ScanReport({
         <h2 className="font-[family-name:var(--font-display)] text-2xl font-extrabold text-[var(--ink)]">
           Fix prompts
         </h2>
+        {prompts.length === 0 && (
+          <p className="mt-4 text-sm font-medium text-[var(--ink)]/70">
+            No targeted changes recommended from the available evidence.
+          </p>
+        )}
         <div className="mt-4 space-y-3">
           {prompts.map((p) => (
             <PromptCard key={`${p.tool}-${p.title}`} item={p} />
