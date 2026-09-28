@@ -23,31 +23,13 @@ const promptValidator = v.object({
   prompt: v.string(),
 });
 
-const guestScanValidator = v.object({
-  guestKey: v.string(),
-  url: v.string(),
-  normalizedUrl: v.string(),
-  estimatedScore: v.number(),
-  verdict: verdictValidator,
-  teaserFlags: v.array(v.string()),
-  lockedFindings: v.optional(v.array(v.string())),
-  lockedPrompts: v.optional(v.array(v.string())),
-  createdAt: v.number(),
-});
-
-function normalizeUrl(raw: string): string {
-  const withProtocol = raw.startsWith("http") ? raw : `https://${raw}`;
-  const url = new URL(withProtocol);
-  url.hash = "";
-  return url.toString().replace(/\/$/, "");
-}
-
 export const getScanInternal = internalQuery({
   args: { scanId: v.id("scans") },
   returns: v.union(
     v.object({
       _id: v.id("scans"),
       userId: v.optional(v.id("users")),
+      guestKey: v.optional(v.string()),
       url: v.string(),
       normalizedUrl: v.string(),
       status: v.string(),
@@ -65,6 +47,7 @@ export const getScanInternal = internalQuery({
     return {
       _id: scan._id,
       userId: scan.userId,
+      guestKey: scan.guestKey,
       url: scan.url,
       normalizedUrl: scan.normalizedUrl,
       status: scan.status,
@@ -116,8 +99,12 @@ export const listMine = query({
   },
 });
 
+/**
+ * Owner view of one scan. Signed-in owners match by account; guests pass the
+ * guestKey from localStorage or their private report link.
+ */
 export const getMine = query({
-  args: { scanId: v.id("scans") },
+  args: { scanId: v.id("scans"), guestKey: v.optional(v.string()) },
   returns: v.union(
     v.object({
       _id: v.id("scans"),
@@ -128,10 +115,11 @@ export const getMine = query({
       score: v.optional(v.number()),
       verdict: v.optional(verdictValidator),
       teaserFlags: v.optional(v.array(v.string())),
-      lockedFindings: v.optional(v.array(v.string())),
-      lockedPrompts: v.optional(v.array(v.string())),
+      /** How many findings sit behind the paywall — the text never leaves the server. */
+      lockedCount: v.number(),
       errorMessage: v.optional(v.string()),
       freeReviewClaimed: v.boolean(),
+      isGuest: v.boolean(),
       createdAt: v.number(),
       review: v.union(
         v.object({
@@ -146,13 +134,18 @@ export const getMine = query({
     v.null(),
   ),
   handler: async (ctx, args) => {
-    const user = await getCurrentUserOrNull(ctx);
-    if (!user) {
+    const scan = await ctx.db.get(args.scanId);
+    if (!scan) {
       return null;
     }
 
-    const scan = await ctx.db.get(args.scanId);
-    if (!scan || scan.userId !== user._id) {
+    const user = await getCurrentUserOrNull(ctx);
+    const ownedByUser = user !== null && scan.userId === user._id;
+    const ownedByGuest =
+      args.guestKey !== undefined &&
+      args.guestKey.length > 0 &&
+      scan.guestKey === args.guestKey;
+    if (!ownedByUser && !ownedByGuest) {
       return null;
     }
 
@@ -177,10 +170,10 @@ export const getMine = query({
       score: scan.score,
       verdict: scan.verdict,
       teaserFlags: scan.teaserFlags,
-      lockedFindings: unlocked ? undefined : scan.lockedFindings,
-      lockedPrompts: unlocked ? undefined : scan.lockedPrompts,
+      lockedCount: unlocked ? 0 : (scan.lockedFindings?.length ?? 0),
       errorMessage: scan.errorMessage,
       freeReviewClaimed: scan.freeReviewClaimedAt !== undefined,
+      isGuest: !ownedByUser,
       createdAt: scan.createdAt,
       review: reviewDoc
         ? {
@@ -195,12 +188,13 @@ export const getMine = query({
 });
 
 /**
- * Claim guest scans from localStorage after sign-up / sign-in.
- * Overwrites ownership onto the authenticated user.
+ * Claim guest scans after sign-up / sign-in. The client only proves which
+ * scans it holds (by guestKey); scores and findings always come from the
+ * server copy, so nobody can forge a result by editing localStorage.
  */
 export const claimGuestScans = mutation({
   args: {
-    scans: v.array(guestScanValidator),
+    guestKeys: v.array(v.string()),
   },
   returns: v.object({
     claimed: v.number(),
@@ -211,60 +205,21 @@ export const claimGuestScans = mutation({
     const now = Date.now();
     const scanIds = [];
 
-    for (const guest of args.scans) {
-      let normalizedUrl: string;
-      try {
-        normalizedUrl = normalizeUrl(guest.normalizedUrl || guest.url);
-      } catch {
-        continue;
-      }
+    for (const guestKey of args.guestKeys.slice(0, 20)) {
+      if (guestKey.length < 8) continue;
 
-      const existing = await ctx.db
+      const scan = await ctx.db
         .query("scans")
-        .withIndex("by_guest_key", (q) => q.eq("guestKey", guest.guestKey))
+        .withIndex("by_guest_key", (q) => q.eq("guestKey", guestKey))
         .unique();
+      if (!scan) continue;
+      // Already someone else's — the guestKey alone can't transfer it.
+      if (scan.userId !== undefined && scan.userId !== user._id) continue;
 
-      // Don't downgrade paid/ready scans
-      const preserveStatus =
-        existing &&
-        (existing.status === "ready" ||
-          existing.status === "paid" ||
-          existing.status === "full_review_running" ||
-          existing.status === "awaiting_payment");
-
-      if (existing) {
-        await ctx.db.patch(existing._id, {
-          userId: user._id,
-          guestKey: guest.guestKey,
-          url: guest.url,
-          normalizedUrl,
-          status: preserveStatus ? existing.status : "preeval_ready",
-          estimatedScore: guest.estimatedScore,
-          verdict: guest.verdict,
-          teaserFlags: guest.teaserFlags,
-          lockedFindings: guest.lockedFindings,
-          lockedPrompts: guest.lockedPrompts,
-          updatedAt: now,
-        });
-        scanIds.push(existing._id);
-        continue;
+      if (scan.userId !== user._id) {
+        await ctx.db.patch(scan._id, { userId: user._id, updatedAt: now });
       }
-
-      const id = await ctx.db.insert("scans", {
-        userId: user._id,
-        guestKey: guest.guestKey,
-        url: guest.url,
-        normalizedUrl,
-        status: "preeval_ready",
-        estimatedScore: guest.estimatedScore,
-        verdict: guest.verdict,
-        teaserFlags: guest.teaserFlags,
-        lockedFindings: guest.lockedFindings,
-        lockedPrompts: guest.lockedPrompts,
-        createdAt: guest.createdAt || now,
-        updatedAt: now,
-      });
-      scanIds.push(id);
+      scanIds.push(scan._id);
     }
 
     return { claimed: scanIds.length, scanIds };

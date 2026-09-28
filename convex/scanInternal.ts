@@ -71,6 +71,96 @@ export const upsertGuestPreeval = internalMutation({
   },
 });
 
+const HOUR_MS = 60 * 60 * 1000;
+const PREEVAL_CACHE_MS = 24 * HOUR_MS;
+const DEFAULT_HOURLY_SCAN_LIMIT = 60;
+
+function hourlyScanLimit(): number {
+  const raw = Number(process.env.PREEVAL_HOURLY_LIMIT);
+  return Number.isFinite(raw) && raw > 0
+    ? Math.floor(raw)
+    : DEFAULT_HOURLY_SCAN_LIMIT;
+}
+
+/**
+ * Gate before a paid-for capture + AI call:
+ * - reuse a preeval of the same URL from the last 24h (costs nothing)
+ * - otherwise enforce a global hourly budget so a script can't run up the bill
+ *
+ * Convex actions don't see the client IP, so the budget is global rather than
+ * per-visitor; PREEVAL_HOURLY_LIMIT tunes it.
+ */
+export const reservePreeval = internalMutation({
+  args: { normalizedUrl: v.string() },
+  returns: v.union(
+    v.object({
+      kind: v.literal("cached"),
+      estimatedScore: v.number(),
+      verdict: verdictValidator,
+      teaserFlags: v.array(v.string()),
+      lockedFindings: v.array(v.string()),
+      lockedPrompts: v.array(v.string()),
+      preevalModel: v.optional(v.string()),
+      screenshotProvider: v.optional(v.string()),
+      screenshotStorageId: v.optional(v.id("_storage")),
+    }),
+    v.object({ kind: v.literal("fresh") }),
+  ),
+  handler: async (ctx, args) => {
+    const now = Date.now();
+
+    const recent = await ctx.db
+      .query("scans")
+      .withIndex("by_normalized_url_and_created", (q) =>
+        q
+          .eq("normalizedUrl", args.normalizedUrl)
+          .gte("createdAt", now - PREEVAL_CACHE_MS),
+      )
+      .order("desc")
+      .take(10);
+
+    const cached = recent.find(
+      (scan) =>
+        scan.estimatedScore !== undefined &&
+        scan.verdict !== undefined &&
+        (scan.teaserFlags?.length ?? 0) > 0 &&
+        (scan.lockedFindings?.length ?? 0) > 0 &&
+        (scan.lockedPrompts?.length ?? 0) > 0,
+    );
+
+    if (
+      cached &&
+      cached.estimatedScore !== undefined &&
+      cached.verdict !== undefined
+    ) {
+      return {
+        kind: "cached" as const,
+        estimatedScore: cached.estimatedScore,
+        verdict: cached.verdict,
+        teaserFlags: cached.teaserFlags ?? [],
+        lockedFindings: cached.lockedFindings ?? [],
+        lockedPrompts: cached.lockedPrompts ?? [],
+        preevalModel: cached.preevalModel,
+        screenshotProvider: cached.screenshotProvider,
+        screenshotStorageId: cached.screenshotStorageId,
+      };
+    }
+
+    const limit = hourlyScanLimit();
+    const lastHour = await ctx.db
+      .query("scans")
+      .withIndex("by_created", (q) => q.gte("createdAt", now - HOUR_MS))
+      .take(limit);
+    if (lastHour.length >= limit) {
+      throw new Error(
+        "Slopcheck is getting a lot of scans right now. Please try again in a few minutes.",
+      );
+    }
+
+    return { kind: "fresh" as const };
+  },
+});
+
 export const markAwaitingPayment = internalMutation({
   args: { scanId: v.id("scans") },
   returns: v.null(),
@@ -88,7 +178,8 @@ export const markAwaitingPayment = internalMutation({
 export const createPaymentRecord = internalMutation({
   args: {
     scanId: v.id("scans"),
-    userId: v.id("users"),
+    userId: v.optional(v.id("users")),
+    guestKey: v.optional(v.string()),
     stripeSessionId: v.string(),
     amountCents: v.number(),
     currency: v.string(),
@@ -106,6 +197,7 @@ export const createPaymentRecord = internalMutation({
     return await ctx.db.insert("payments", {
       scanId: args.scanId,
       userId: args.userId,
+      guestKey: args.guestKey,
       stripeSessionId: args.stripeSessionId,
       amountCents: args.amountCents,
       currency: args.currency,
@@ -119,6 +211,7 @@ export const markPaidAndQueueReview = internalMutation({
   args: {
     stripeSessionId: v.string(),
     scanId: v.optional(v.id("scans")),
+    email: v.optional(v.string()),
   },
   returns: v.union(
     v.object({
@@ -150,6 +243,7 @@ export const markPaidAndQueueReview = internalMutation({
       await ctx.db.patch(payment._id, {
         status: "paid",
         paidAt: now,
+        ...(args.email ? { email: args.email } : {}),
       });
     }
 
@@ -170,6 +264,36 @@ export const markPaidAndQueueReview = internalMutation({
   },
 });
 
+/**
+ * A scan that was already paid for (or unlocked via X share) but whose review
+ * failed: queue it again instead of charging a second time.
+ * Returns false when the scan was never unlocked.
+ */
+export const requeueUnlockedReview = internalMutation({
+  args: { scanId: v.id("scans") },
+  returns: v.boolean(),
+  handler: async (ctx, args) => {
+    const scan = await ctx.db.get(args.scanId);
+    if (!scan || scan.status !== "failed") return false;
+
+    const paid = await ctx.db
+      .query("payments")
+      .withIndex("by_scan", (q) => q.eq("scanId", args.scanId))
+      .collect();
+    const unlocked =
+      scan.freeReviewClaimedAt !== undefined ||
+      paid.some((payment) => payment.status === "paid");
+    if (!unlocked) return false;
+
+    await ctx.db.patch(args.scanId, {
+      status: "paid",
+      errorMessage: undefined,
+      updatedAt: Date.now(),
+    });
+    return true;
+  },
+});
+
 export const setFullReviewRunning = internalMutation({
   args: { scanId: v.id("scans") },
   returns: v.null(),
@@ -185,7 +309,7 @@ export const setFullReviewRunning = internalMutation({
 export const saveFullReview = internalMutation({
   args: {
     scanId: v.id("scans"),
-    userId: v.id("users"),
+    userId: v.optional(v.id("users")),
     score: v.number(),
     summary: v.string(),
     findings: v.array(

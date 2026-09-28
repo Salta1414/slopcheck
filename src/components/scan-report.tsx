@@ -1,5 +1,6 @@
 "use client";
 
+import { Show } from "@clerk/nextjs";
 import { useState } from "react";
 import type { Id } from "../../convex/_generated/dataModel";
 import { FeedbackButton } from "@/components/feedback-button";
@@ -22,6 +23,7 @@ type PromptItem = {
 
 export function ScanReport({
   scanId,
+  guestKey,
   score,
   verdict,
   url,
@@ -30,6 +32,7 @@ export function ScanReport({
   prompts,
 }: {
   scanId: Id<"scans">;
+  guestKey?: string;
   score: number;
   verdict?: SlopVerdict;
   url: string;
@@ -53,6 +56,7 @@ export function ScanReport({
           </div>
           <ShareScoreButton
             scanId={scanId}
+            guestKey={guestKey}
             score={score}
             verdict={verdict}
             url={url}
@@ -61,7 +65,9 @@ export function ScanReport({
         <p className="mt-4 text-base font-semibold text-[var(--ink)]/80">
           {summary}
         </p>
-        <FeedbackButton scanId={scanId} />
+        <Show when="signed-in">
+          <FeedbackButton scanId={scanId} />
+        </Show>
       </section>
 
       <section>

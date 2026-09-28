@@ -63,7 +63,9 @@ export default defineSchema({
   })
     .index("by_user", ["userId"])
     .index("by_guest_key", ["guestKey"])
-    .index("by_user_and_created", ["userId", "createdAt"]),
+    .index("by_user_and_created", ["userId", "createdAt"])
+    .index("by_created", ["createdAt"])
+    .index("by_normalized_url_and_created", ["normalizedUrl", "createdAt"]),
 
   xShareChallenges: defineTable({
     state: v.string(),
@@ -93,7 +95,11 @@ export default defineSchema({
 
   payments: defineTable({
     scanId: v.id("scans"),
-    userId: v.id("users"),
+    /** Absent for guest checkouts — the scan's guestKey proves ownership. */
+    userId: v.optional(v.id("users")),
+    guestKey: v.optional(v.string()),
+    /** Buyer email reported by Stripe, so guest purchases can be recovered. */
+    email: v.optional(v.string()),
     stripeSessionId: v.string(),
     amountCents: v.number(),
     currency: v.string(),
@@ -112,7 +118,7 @@ export default defineSchema({
 
   reviews: defineTable({
     scanId: v.id("scans"),
-    userId: v.id("users"),
+    userId: v.optional(v.id("users")),
     score: v.number(),
     summary: v.string(),
     findings: v.array(

@@ -5,7 +5,14 @@ import { useState } from "react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 
-export function UnlockButton({ scanId }: { scanId: Id<"scans"> }) {
+export function UnlockButton({
+  scanId,
+  guestKey,
+}: {
+  scanId: Id<"scans">;
+  /** Lets guests pay without an account. */
+  guestKey?: string;
+}) {
   const createCheckout = useAction(api.payments.createCheckoutSession);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -14,7 +21,7 @@ export function UnlockButton({ scanId }: { scanId: Id<"scans"> }) {
     setError(null);
     setPending(true);
     try {
-      const { url } = await createCheckout({ scanId });
+      const { url } = await createCheckout({ scanId, guestKey });
       window.location.href = url;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Checkout failed");

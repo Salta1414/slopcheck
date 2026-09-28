@@ -36,11 +36,10 @@ function normalizeFullReview(raw: unknown): {
   prompts: PromptItem[];
 } {
   const data = (raw ?? {}) as Record<string, unknown>;
-  let score =
-    typeof data.score === "number" && Number.isFinite(data.score)
-      ? Math.round(data.score)
-      : 60;
-  score = Math.max(0, Math.min(100, score));
+  if (typeof data.score !== "number" || !Number.isFinite(data.score)) {
+    throw new Error("The AI returned a review without a score");
+  }
+  const score = Math.max(0, Math.min(100, Math.round(data.score)));
 
   const summary =
     typeof data.summary === "string" && data.summary.trim()
@@ -96,23 +95,9 @@ function normalizeFullReview(raw: unknown): {
     .filter((p): p is PromptItem => p !== null)
     .slice(0, 5);
 
-  if (findings.length === 0) {
-    findings.push({
-      area: "hero",
-      severity: "medium",
-      issue: "Hero presentation lacks a distinctive brand signal.",
-      whyItFeelsAi: "Could belong to another SaaS product with a swap of logo.",
-      fixHint: "Lead with a concrete product proof moment and brand-specific language.",
-    });
-  }
-
-  if (prompts.length === 0) {
-    prompts.push({
-      tool: "cursor",
-      title: "Rewrite hero for brand specificity",
-      prompt:
-        "Rewrite the landing hero so the brand name and unique offer dominate the first viewport. Remove vague AI claims and chip spam. Keep one CTA.",
-    });
+  // A paid report must be real — never pad it with generic findings.
+  if (findings.length === 0 || prompts.length === 0) {
+    throw new Error("The AI returned an incomplete review");
   }
 
   return { score, summary, findings, prompts };
@@ -128,13 +113,6 @@ export const runFullReview = internalAction({
       scanId: args.scanId,
     });
     if (!scan) return null;
-    if (!scan.userId) {
-      await ctx.runMutation(internal.scanInternal.markScanFailed, {
-        scanId: args.scanId,
-        errorMessage: "Scan has no owner for full review",
-      });
-      return null;
-    }
 
     await ctx.runMutation(internal.scanInternal.setFullReviewRunning, {
       scanId: args.scanId,
@@ -195,22 +173,38 @@ export const runFullReview = internalAction({
       }
 
       const model = fullReviewModel();
-      const content = await openRouterVisionJson({
-        model,
-        system: FULL_REVIEW_SYSTEM_PROMPT,
-        userText: [
-          "Full UI slop review.",
-          `URL: ${scan.normalizedUrl}`,
-          `Preeval estimate: ${scan.estimatedScore ?? "n/a"}`,
-          `Preeval verdict: ${scan.verdict ?? "n/a"}`,
-          hasMobile
-            ? "Images in order: (1) Desktop 1440×900, (2) Mobile 390×844. Review both."
-            : "Only the desktop screenshot is available (mobile capture failed).",
-        ].join("\n"),
-        imagesBase64Png: images,
-      });
+      const userText = [
+        "Full UI slop review.",
+        `URL: ${scan.normalizedUrl}`,
+        `Preeval estimate: ${scan.estimatedScore ?? "n/a"}`,
+        `Preeval verdict: ${scan.verdict ?? "n/a"}`,
+        hasMobile
+          ? "Images in order: (1) Desktop 1440×900, (2) Mobile 390×844. Review both."
+          : "Only the desktop screenshot is available (mobile capture failed).",
+      ].join("\n");
 
-      const parsed = normalizeFullReview(parseJsonObject(content));
+      // The customer already paid, so give a flaky model reply one more shot
+      // before failing the scan.
+      let parsed: ReturnType<typeof normalizeFullReview> | null = null;
+      let lastError: unknown = null;
+      for (let attempt = 0; attempt < 2 && !parsed; attempt++) {
+        try {
+          const content = await openRouterVisionJson({
+            model,
+            system: FULL_REVIEW_SYSTEM_PROMPT,
+            userText,
+            imagesBase64Png: images,
+          });
+          parsed = normalizeFullReview(parseJsonObject(content));
+        } catch (error) {
+          lastError = error;
+        }
+      }
+      if (!parsed) {
+        throw lastError instanceof Error
+          ? lastError
+          : new Error("Full review failed");
+      }
 
       await ctx.runMutation(internal.scanInternal.saveFullReview, {
         scanId: args.scanId,

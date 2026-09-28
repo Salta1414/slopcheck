@@ -10,38 +10,43 @@ Erster Scan **ohne Account** im Browser speichern. Nach Register/Login Daten nac
 ```
 [Guest]
   URL submit (Hero)
-    → local preeval (mock → later Gemini)
-    → localStorage: slopcheck.guestScans.v1
-    → UI: score + teaser flags + blurred findings
-    → CTA: Sign up / Log in
+    → scanActions.runPreeval
+        - reuses a preeval of the same URL from the last 24h (no cost)
+        - otherwise global hourly budget (PREEVAL_HOURLY_LIMIT, default 60)
+        - screenshot + Gemini; incomplete AI output fails instead of guessing
+    → localStorage: slopcheck.guestScans.v1 (score, teaser, lockedCount only)
+    → UI: score + teaser flags + blurred placeholders
+    → CTA: Unlock €5 (no account) · or log in + share on X for free
 
-[Auth]
+[Pay — guest or signed in]
+  payments.createCheckoutSession({ scanId, guestKey })
+    → Stripe Checkout (collects email)
+    → success_url /scans/:id?paid=1&k=<guestKey>  (private report link)
+    → webhook → full review (strong model, one retry on bad output)
+  A paid scan whose review failed is re-queued, never charged twice.
+
+[Auth — optional]
   Clerk modal
     → GuestScanSync
         1. users.ensureUser
-        2. scans.claimGuestScans(payload)
+        2. scans.claimGuestScans({ guestKeys })
         3. clear localStorage
-    → Scan gehört dem User in Convex
-
-[Pay] (next)
-  Stripe Checkout €5
-    → webhook → full review (Claude)
-    → unlock findings + prompts
+    → server scans with those keys move onto the user
 ```
 
 ## localStorage Shape
 
 ```ts
 type GuestScan = {
-  guestKey: string;          // uuid
+  guestKey: string;          // uuid — also the guest's access key
   url: string;
   normalizedUrl: string;
   estimatedScore: number;    // 0–100
   verdict: "fresh" | "mixed" | "likely_slop" | "peak_slop";
   teaserFlags: string[];     // visible
-  lockedFindings: string[];  // blurred
-  lockedPrompts: string[];   // blurred / locked
+  lockedCount: number;       // locked text stays server-side
   createdAt: number;
+  scanId?: string;
 };
 ```
 
@@ -51,8 +56,8 @@ Keys:
 
 ## Claim Rules
 
-- Match by `guestKey` if already exists in Convex → **patch/overwrite** onto `userId`
-- Else insert new scan owned by user
+- Client sends only `guestKey`s; scores/findings come from the server copy
+- Scans already owned by another user are skipped
 - Local copy cleared after successful claim
 - If claim fails → keep local, retry next session
 

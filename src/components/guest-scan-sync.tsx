@@ -30,7 +30,7 @@ export function GuestScanSync() {
     void (async () => {
       try {
         await ensureUser({});
-        await claimGuestScans({ scans: toClaimPayload(guests) });
+        await claimGuestScans(toClaimPayload(guests));
         clearGuestScans();
       } catch (error) {
         console.error("Failed to claim guest scans", error);

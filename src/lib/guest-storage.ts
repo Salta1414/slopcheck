@@ -7,8 +7,8 @@ export type GuestScan = {
   estimatedScore: number;
   verdict: SlopVerdict;
   teaserFlags: string[];
-  lockedFindings: string[];
-  lockedPrompts: string[];
+  /** Locked findings stay on the server; we only know how many to hint at. */
+  lockedCount: number;
   createdAt: number;
   scanId?: string;
 };
@@ -34,10 +34,25 @@ export function loadGuestScans(): GuestScan[] {
     if (!raw) return [];
     const parsed: unknown = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    return parsed as GuestScan[];
+    return parsed.map(migrateGuestScan);
   } catch {
     return [];
   }
+}
+
+/** Older entries stored the locked text itself — keep only the count. */
+function migrateGuestScan(entry: unknown): GuestScan {
+  const legacy = { ...(entry as Record<string, unknown>) };
+  const lockedFindings = legacy.lockedFindings;
+  delete legacy.lockedFindings;
+  delete legacy.lockedPrompts;
+
+  const scan = legacy as unknown as GuestScan;
+  if (typeof scan.lockedCount === "number") return scan;
+  return {
+    ...scan,
+    lockedCount: Array.isArray(lockedFindings) ? lockedFindings.length : 4,
+  };
 }
 
 export function saveGuestScans(scans: GuestScan[]): void {
@@ -55,6 +70,10 @@ export function upsertGuestScan(scan: GuestScan): GuestScan {
 
 export function getGuestScan(guestKey: string): GuestScan | null {
   return loadGuestScans().find((s) => s.guestKey === guestKey) ?? null;
+}
+
+export function findGuestKeyForScan(scanId: string): string | null {
+  return loadGuestScans().find((s) => s.scanId === scanId)?.guestKey ?? null;
 }
 
 export function getActiveGuestScan(): GuestScan | null {
@@ -75,17 +94,7 @@ export function clearGuestScans(): void {
   localStorage.removeItem(ACTIVE_KEY);
 }
 
-/** Payload for Convex claimGuestScans */
+/** Payload for Convex claimGuestScans — the server owns the scan data. */
 export function toClaimPayload(scans: GuestScan[]) {
-  return scans.map((s) => ({
-    guestKey: s.guestKey,
-    url: s.url,
-    normalizedUrl: s.normalizedUrl,
-    estimatedScore: s.estimatedScore,
-    verdict: s.verdict,
-    teaserFlags: s.teaserFlags,
-    lockedFindings: s.lockedFindings,
-    lockedPrompts: s.lockedPrompts,
-    createdAt: s.createdAt,
-  }));
+  return { guestKeys: scans.map((s) => s.guestKey) };
 }

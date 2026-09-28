@@ -28,7 +28,7 @@
 - [x] Model envs on Convex (`OPENROUTER_PREEVAL_MODEL`, etc.)
 - [ ] **You:** `npx convex env set OPENROUTER_API_KEY <key>`
 - [ ] Optional: `npx convex env set SCREENSHOT_API_KEY <key>` (ScreenshotOne; else Microlink fallback)
-- [ ] Rate limit guest scans
+- [x] Rate limit guest scans (24h URL cache + global hourly budget)
 
 ## Phase 3 — Stripe €5 + Full Review (OpenRouter strong) ✅
 

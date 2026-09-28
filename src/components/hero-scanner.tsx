@@ -1,12 +1,14 @@
 "use client";
 
-import { SignInButton, SignUpButton, Show } from "@clerk/nextjs";
+import { SignInButton, Show } from "@clerk/nextjs";
 import { useAction } from "convex/react";
 import { useEffect, useState, useTransition } from "react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
+import { LockedFindings } from "@/components/locked-findings";
 import { ShareForFreeButton } from "@/components/share-for-free-button";
 import { ShareScoreButton } from "@/components/share-score-button";
+import { UnlockButton } from "@/components/unlock-button";
 import type { GuestScan } from "@/lib/guest-storage";
 import {
   createGuestKey,
@@ -40,8 +42,7 @@ export function HeroScanner() {
           estimatedScore: result.estimatedScore,
           verdict: result.verdict,
           teaserFlags: result.teaserFlags,
-          lockedFindings: result.lockedFindings,
-          lockedPrompts: result.lockedPrompts,
+          lockedCount: result.lockedCount,
           createdAt: result.createdAt,
           scanId: result.scanId,
         };
@@ -184,27 +185,30 @@ function TeaserResult({ scan }: { scan: GuestScan }) {
           </p>
         </div>
 
-        <div className="flex flex-col gap-3 sm:items-end">
-          {scan.scanId ? (
-            <>
-              <Show when="signed-in">
-                <ShareForFreeButton
-                  scanId={scan.scanId as Id<"scans">}
-                />
-              </Show>
-              <Show when="signed-out">
-                <ShareScoreButton
-                  scanId={scan.scanId}
-                  guestKey={scan.guestKey}
-                  score={scan.estimatedScore}
-                  verdict={scan.verdict}
-                  url={scan.normalizedUrl}
-                />
-              </Show>
-            </>
-          ) : null}
-          <AuthGate scanId={scan.scanId} />
-        </div>
+        {scan.scanId ? (
+          <div className="flex flex-col gap-3 sm:items-end">
+            <UnlockButton
+              scanId={scan.scanId as Id<"scans">}
+              guestKey={scan.guestKey}
+            />
+            <p className="text-xs font-bold text-[var(--ink)]/55 sm:text-right">
+              No account needed · secure checkout via Stripe
+            </p>
+            <Show when="signed-in">
+              <ShareForFreeButton scanId={scan.scanId as Id<"scans">} />
+            </Show>
+            <Show when="signed-out">
+              <FreeViaXHint />
+              <ShareScoreButton
+                scanId={scan.scanId}
+                guestKey={scan.guestKey}
+                score={scan.estimatedScore}
+                verdict={scan.verdict}
+                url={scan.normalizedUrl}
+              />
+            </Show>
+          </div>
+        ) : null}
       </div>
 
       <div className="grid gap-4 p-6 sm:grid-cols-2 sm:p-8">
@@ -228,20 +232,10 @@ function TeaserResult({ scan }: { scan: GuestScan }) {
           <h2 className="font-[family-name:var(--font-display)] text-lg font-extrabold text-[var(--ink)]">
             Full findings
           </h2>
-          <div className="relative mt-3 space-y-2">
-            {scan.lockedFindings.map((finding) => (
-              <p
-                key={finding}
-                className="rounded-2xl border-[3px] border-[var(--ink)]/30 bg-[var(--bg)] px-4 py-3 text-sm font-semibold text-[var(--ink)] blur-[6px] select-none"
-              >
-                {finding}
-              </p>
-            ))}
-            <div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-t from-white via-white/40 to-transparent" />
-          </div>
+          <LockedFindings count={scan.lockedCount} />
           <p className="mt-3 text-xs font-bold text-[var(--ink)]/55">
-            Sign up to save this scan — then share your score on X for a free
-            full review, or unlock it for €5.
+            {scan.lockedCount} findings plus copy-paste fix prompts for Cursor,
+            v0 and Claude — unlocked by the full review.
           </p>
         </div>
       </div>
@@ -249,52 +243,20 @@ function TeaserResult({ scan }: { scan: GuestScan }) {
   );
 }
 
-function AuthGate({ scanId }: { scanId?: string }) {
+function FreeViaXHint() {
   return (
-    <div className="flex flex-col gap-2 sm:items-end">
-      <Show when="signed-out">
-        <p className="text-sm font-bold text-[var(--ink)]/70">
-          Save your score — free account
-        </p>
-        <div className="flex flex-wrap gap-2">
-          <SignUpButton mode="modal">
-            <button
-              type="button"
-              className="rounded-full border-[3px] border-[var(--ink)] bg-[var(--accent)] px-5 py-2.5 text-sm font-black text-[var(--ink)] shadow-[3px_3px_0_var(--ink)] transition hover:translate-y-[1px] hover:shadow-[2px_2px_0_var(--ink)]"
-            >
-              Sign up to continue
-            </button>
-          </SignUpButton>
-          <SignInButton mode="modal">
-            <button
-              type="button"
-              className="rounded-full border-[3px] border-[var(--ink)] bg-white px-5 py-2.5 text-sm font-black text-[var(--ink)] shadow-[3px_3px_0_var(--ink)] transition hover:translate-y-[1px] hover:shadow-[2px_2px_0_var(--ink)]"
-            >
-              Log in
-            </button>
-          </SignInButton>
-        </div>
-      </Show>
-      <Show when="signed-in">
-        {scanId ? (
-          <div className="flex flex-col items-end gap-2">
-            <p className="text-sm font-bold text-[var(--ink)]/70">
-              Ready to unlock
-            </p>
-            <a
-              href={`/scans/${scanId}`}
-              className="rounded-full border-[3px] border-[var(--ink)] bg-[var(--accent)] px-5 py-2.5 text-sm font-black text-[var(--ink)] shadow-[3px_3px_0_var(--ink)] transition hover:translate-y-[1px] hover:shadow-[2px_2px_0_var(--ink)]"
-            >
-              Unlock full review · €5
-            </a>
-          </div>
-        ) : (
-          <p className="rounded-full border-[3px] border-[var(--ink)] bg-[var(--accent)] px-4 py-2 text-sm font-extrabold text-[var(--ink)] shadow-[3px_3px_0_var(--ink)]">
-            Saved to your account ✓
-          </p>
-        )}
-      </Show>
-    </div>
+    <p className="text-xs font-bold text-[var(--ink)]/55 sm:text-right">
+      Rather share than pay?{" "}
+      <SignInButton mode="modal">
+        <button
+          type="button"
+          className="font-black text-[var(--ink)] underline decoration-[var(--accent)] decoration-[3px] underline-offset-2"
+        >
+          Log in
+        </button>
+      </SignInButton>{" "}
+      and post your score on X for a free review.
+    </p>
   );
 }
 

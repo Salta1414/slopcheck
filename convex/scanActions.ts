@@ -56,17 +56,19 @@ type PreevalJson = {
   lockedPrompts?: unknown;
 };
 
-function asStringArray(value: unknown, min: number, fallback: string[]): string[] {
-  if (!Array.isArray(value)) return fallback;
-  const cleaned = value
+function asStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value
     .filter((item): item is string => typeof item === "string")
     .map((s) => s.trim())
     .filter(Boolean);
-  if (cleaned.length < min) return fallback;
-  return cleaned;
 }
 
-function normalizePreeval(raw: unknown, host: string): {
+/**
+ * Validate the model output. Never fill gaps with canned findings — a guessed
+ * verdict that looks real is worse than an honest "try again".
+ */
+function normalizePreeval(raw: unknown): {
   estimatedScore: number;
   verdict: SlopVerdict;
   teaserFlags: string[];
@@ -74,42 +76,34 @@ function normalizePreeval(raw: unknown, host: string): {
   lockedPrompts: string[];
 } {
   const data = (raw ?? {}) as PreevalJson;
-  let score =
-    typeof data.estimatedScore === "number" && Number.isFinite(data.estimatedScore)
-      ? Math.round(data.estimatedScore)
-      : 55;
-  score = Math.max(0, Math.min(100, score));
+  const teaserFlags = asStringArray(data.teaserFlags).slice(0, 3);
+  const lockedFindings = asStringArray(data.lockedFindings).slice(0, 6);
+  const lockedPrompts = asStringArray(data.lockedPrompts).slice(0, 5);
 
-  const allowed: SlopVerdict[] = [
-    "fresh",
-    "mixed",
-    "likely_slop",
-    "peak_slop",
-  ];
-  const verdict =
-    typeof data.verdict === "string" &&
-    allowed.includes(data.verdict as SlopVerdict)
-      ? (data.verdict as SlopVerdict)
-      : scoreToVerdict(score);
+  if (
+    typeof data.estimatedScore !== "number" ||
+    !Number.isFinite(data.estimatedScore) ||
+    teaserFlags.length === 0 ||
+    lockedFindings.length === 0 ||
+    lockedPrompts.length === 0
+  ) {
+    throw new Error(
+      "The AI returned an incomplete result for this site. Please try again.",
+    );
+  }
+
+  const estimatedScore = Math.max(
+    0,
+    Math.min(100, Math.round(data.estimatedScore)),
+  );
 
   return {
-    estimatedScore: score,
-    verdict,
-    teaserFlags: asStringArray(data.teaserFlags, 1, [
-      `First viewport on ${host} shows generic SaaS patterns.`,
-      "Brand signal looks weak above the fold.",
-    ]).slice(0, 3),
-    lockedFindings: asStringArray(data.lockedFindings, 1, [
-      "Hero hierarchy feels template-driven.",
-      "Feature section likely uses a repetitive card grid.",
-      "Color system leans on default SaaS gradients.",
-      "CTA copy is vague and interchangeable.",
-    ]).slice(0, 6),
-    lockedPrompts: asStringArray(data.lockedPrompts, 1, [
-      "Cursor: rewrite the hero to lead with brand-specific proof.",
-      "v0: replace feature cards with one bold product demo strip.",
-      "Claude: propose a 4-color intentional palette (no purple-indigo default).",
-    ]).slice(0, 5),
+    estimatedScore,
+    // Derive from the score so the label can never contradict the number.
+    verdict: scoreToVerdict(estimatedScore),
+    teaserFlags,
+    lockedFindings,
+    lockedPrompts,
   };
 }
 
@@ -130,8 +124,8 @@ export const runPreeval = action({
       v.literal("peak_slop"),
     ),
     teaserFlags: v.array(v.string()),
-    lockedFindings: v.array(v.string()),
-    lockedPrompts: v.array(v.string()),
+    /** Locked findings stay server-side; the client only renders placeholders. */
+    lockedCount: v.number(),
     createdAt: v.number(),
     scanId: v.id("scans"),
   }),
@@ -142,8 +136,7 @@ export const runPreeval = action({
     estimatedScore: number;
     verdict: SlopVerdict;
     teaserFlags: string[];
-    lockedFindings: string[];
-    lockedPrompts: string[];
+    lockedCount: number;
     createdAt: number;
     scanId: Id<"scans">;
   }> => {
@@ -168,6 +161,41 @@ export const runPreeval = action({
       normalizedUrl,
       createdAt,
     };
+
+    const reservation = await ctx.runMutation(
+      internal.scanInternal.reservePreeval,
+      { normalizedUrl },
+    );
+
+    if (reservation.kind === "cached") {
+      const scanId: Id<"scans"> = await ctx.runMutation(
+        internal.scanInternal.upsertGuestPreeval,
+        {
+          ...base,
+          status: "preeval_ready",
+          estimatedScore: reservation.estimatedScore,
+          verdict: reservation.verdict,
+          teaserFlags: reservation.teaserFlags,
+          lockedFindings: reservation.lockedFindings,
+          lockedPrompts: reservation.lockedPrompts,
+          preevalModel: reservation.preevalModel,
+          screenshotProvider: reservation.screenshotProvider,
+          screenshotStorageId: reservation.screenshotStorageId,
+        },
+      );
+
+      return {
+        guestKey: args.guestKey,
+        url: args.url.trim(),
+        normalizedUrl,
+        estimatedScore: reservation.estimatedScore,
+        verdict: reservation.verdict,
+        teaserFlags: reservation.teaserFlags,
+        lockedCount: reservation.lockedFindings.length,
+        createdAt,
+        scanId,
+      };
+    }
 
     await ctx.runMutation(internal.scanInternal.upsertGuestPreeval, {
       ...base,
@@ -199,7 +227,7 @@ export const runPreeval = action({
         imagesBase64Png: [shot.base64],
       });
 
-      const parsed = normalizePreeval(parseJsonObject(content), host);
+      const parsed = normalizePreeval(parseJsonObject(content));
 
       const scanId: Id<"scans"> = await ctx.runMutation(
         internal.scanInternal.upsertGuestPreeval,
@@ -224,8 +252,7 @@ export const runPreeval = action({
         estimatedScore: parsed.estimatedScore,
         verdict: parsed.verdict,
         teaserFlags: parsed.teaserFlags,
-        lockedFindings: parsed.lockedFindings,
-        lockedPrompts: parsed.lockedPrompts,
+        lockedCount: parsed.lockedFindings.length,
         createdAt,
         scanId,
       };
