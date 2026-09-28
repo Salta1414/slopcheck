@@ -15,6 +15,7 @@ import {
   scoreToVerdict,
   type Scoring,
 } from "./lib/rubric";
+import { parseKit, type DesignKit } from "./lib/kit";
 import { captureScreenshotBase64 } from "./lib/screenshots";
 import type { Id } from "./_generated/dataModel";
 
@@ -38,6 +39,7 @@ type PromptItem = {
 function normalizeFullReview(raw: unknown): {
   score: number;
   scoring: Scoring;
+  kit: DesignKit;
   summary: string;
   findings: Finding[];
   prompts: PromptItem[];
@@ -101,11 +103,14 @@ function normalizeFullReview(raw: unknown): {
     .slice(0, 5);
 
   // A paid report must be real — never pad it with generic findings.
-  if (findings.length === 0 || prompts.length === 0) {
+  // Prompts are legacy (the kit replaced them); findings and the kit are the product.
+  if (findings.length === 0) {
     throw new Error("The AI returned an incomplete review");
   }
 
-  return { score, scoring, summary, findings, prompts };
+  const kit = parseKit(data.kit);
+
+  return { score, scoring, summary, findings, prompts, kit };
 }
 
 export const runFullReview = internalAction({
@@ -222,6 +227,7 @@ export const runFullReview = internalAction({
         prompts: parsed.prompts,
         tells: parsed.scoring.tells,
         criteriaScores: parsed.scoring.criteria,
+        kit: parsed.kit,
         model,
         screenshotStorageId,
         mobileScreenshotStorageId,

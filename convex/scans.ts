@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { internalQuery, mutation, query } from "./_generated/server";
 import { getCurrentUser, getCurrentUserOrNull } from "./lib/auth";
+import { designKitValidator } from "./lib/kitValidator";
 import { TELLS, tellLabel } from "./lib/rubric";
 
 const verdictValidator = v.union(
@@ -132,6 +133,7 @@ export const getMine = query({
             v.object({ id: v.string(), label: v.string(), evidence: v.string() }),
           ),
           tellsChecked: v.number(),
+          kit: v.union(designKitValidator, v.null()),
         }),
         v.null(),
       ),
@@ -192,6 +194,7 @@ export const getMine = query({
             })),
             // Reviews from before the checklist existed didn't check any.
             tellsChecked: reviewDoc.rubricVersion ? TELLS.length : 0,
+            kit: reviewDoc.kit ?? null,
           }
         : null,
     };

@@ -138,7 +138,7 @@ export default async function PublicSharePage({ params }: Props) {
             Think your site smells worse?
           </p>
           <p className="mt-1 text-sm font-semibold text-[var(--ink)]/65">
-            Paste a URL — get a score, then unlock fix prompts for €5.
+            Paste a URL — get a score, then unlock a design kit for your AI for €5.
           </p>
           <Link
             href="/"

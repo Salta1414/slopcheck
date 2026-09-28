@@ -3,6 +3,8 @@
 import { Show } from "@clerk/nextjs";
 import { useState } from "react";
 import type { Id } from "../../convex/_generated/dataModel";
+import type { DesignKit } from "../../convex/lib/kit";
+import { DesignKitPanel } from "@/components/design-kit";
 import { FeedbackButton } from "@/components/feedback-button";
 import { ShareScoreButton } from "@/components/share-score-button";
 import type { SlopVerdict } from "@/lib/guest-storage";
@@ -34,6 +36,7 @@ export function ScanReport({
   prompts,
   tells,
   tellsChecked,
+  kit,
 }: {
   scanId: Id<"scans">;
   guestKey?: string;
@@ -45,6 +48,7 @@ export function ScanReport({
   prompts: PromptItem[];
   tells: Tell[];
   tellsChecked: number;
+  kit: DesignKit | null;
 }) {
   return (
     <div className="space-y-8">
@@ -75,6 +79,16 @@ export function ScanReport({
           <FeedbackButton scanId={scanId} />
         </Show>
       </section>
+
+      {kit ? (
+        <DesignKitPanel
+          kit={kit}
+          url={url}
+          score={score}
+          tells={tells}
+          findings={findings}
+        />
+      ) : null}
 
       {tellsChecked > 0 ? (
         <section>
@@ -139,20 +153,23 @@ export function ScanReport({
         </ul>
       </section>
 
-      <section>
-        <h2 className="font-[family-name:var(--font-display)] text-2xl font-extrabold text-[var(--ink)]">
-          Fix prompts
-        </h2>
-        <div className="mt-4 space-y-3">
-          {prompts.map((p, i) => (
-            <PromptCard
-              key={`${p.tool}-${p.title}`}
-              item={p}
-              delayMs={150 + (findings.length + i) * 80}
-            />
-          ))}
-        </div>
-      </section>
+      {/* Legacy: reviews from before the design kit shipped prompts instead. */}
+      {prompts.length > 0 ? (
+        <section>
+          <h2 className="font-[family-name:var(--font-display)] text-2xl font-extrabold text-[var(--ink)]">
+            Fix prompts
+          </h2>
+          <div className="mt-4 space-y-3">
+            {prompts.map((p, i) => (
+              <PromptCard
+                key={`${p.tool}-${p.title}`}
+                item={p}
+                delayMs={150 + (findings.length + i) * 80}
+              />
+            ))}
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }

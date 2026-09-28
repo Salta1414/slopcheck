@@ -148,7 +148,8 @@ function ScanDetailBody({
             "Poking at the mobile nav…",
             "Judging your font pairing (lovingly)…",
             "Writing concrete findings…",
-            "Drafting copy-paste fix prompts…",
+            "Picking a palette and type pairing…",
+            "Matching effect recipes to your sections…",
             "Double-checking before we serve it…",
           ]}
         />
@@ -165,6 +166,7 @@ function ScanDetailBody({
           prompts={scan.review.prompts}
           tells={scan.review.tells}
           tellsChecked={scan.review.tellsChecked}
+          kit={scan.review.kit}
         />
       ) : (
         <LockedTeaser

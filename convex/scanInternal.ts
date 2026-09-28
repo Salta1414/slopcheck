@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { internalMutation } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
+import { designKitValidator } from "./lib/kitValidator";
 import { RUBRIC_VERSION, scoreToVerdict } from "./lib/rubric";
 
 const tellsValidator = v.array(
@@ -351,6 +352,7 @@ export const saveFullReview = internalMutation({
     ),
     tells: tellsValidator,
     criteriaScores: v.record(v.string(), v.number()),
+    kit: designKitValidator,
     model: v.string(),
     screenshotStorageId: v.optional(v.id("_storage")),
     mobileScreenshotStorageId: v.optional(v.id("_storage")),
@@ -373,6 +375,7 @@ export const saveFullReview = internalMutation({
         tells: args.tells,
         criteriaScores: args.criteriaScores,
         rubricVersion: RUBRIC_VERSION,
+        kit: args.kit,
         model: args.model,
       });
       reviewId = existing._id;
@@ -387,6 +390,7 @@ export const saveFullReview = internalMutation({
         tells: args.tells,
         criteriaScores: args.criteriaScores,
         rubricVersion: RUBRIC_VERSION,
+        kit: args.kit,
         model: args.model,
         createdAt: now,
       });

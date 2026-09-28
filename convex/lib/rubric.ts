@@ -10,6 +10,8 @@
  * explainable and far less random than "give me a number from 0 to 100".
  */
 
+import { KIT_JSON_SHAPE, KIT_SPEC } from "./kit";
+
 export const RUBRIC_VERSION = 2;
 
 export type SlopVerdict = "fresh" | "mixed" | "likely_slop" | "peak_slop";
@@ -256,12 +258,15 @@ ${SCORING_SPEC}
 
 ${CAPTURE_CAVEAT}
 
+${KIT_SPEC}
+
 Return ONLY valid JSON (no markdown):
 {
   "captureStatus": "ok" | "blocked" | "blank" | "error_page",
   "criteria": { ${CRITERIA.map((c) => `"${c.id}": number`).join(", ")} },
   "tells": [ { "id": string, "evidence": string } ],
   "summary": string,
+  ${KIT_JSON_SHAPE},
   "findings": [
     {
       "area": "hero" | "nav" | "features" | "typography" | "color" | "imagery" | "cta" | "layout" | "mobile" | "capture",
@@ -270,19 +275,12 @@ Return ONLY valid JSON (no markdown):
       "whyItFeelsAi": string,
       "fixHint": string
     }
-  ],
-  "prompts": [
-    {
-      "tool": "cursor" | "v0" | "claude" | "figma",
-      "title": string,
-      "prompt": string
-    }
   ]
 }
 
 Rules:
 - 4–8 findings, grounded ONLY in visible screenshots; include at least one mobile finding when mobile issues are visible
-- 3–5 actionable copy-paste prompts that rewrite specific UI sections, ready to paste into the named tool
+- the kit's section plan must fix the findings and tells you listed
 - summary: 2–3 sentences, direct, no fluff — name the biggest tells`;
 
 export class CaptureNotUsableError extends Error {

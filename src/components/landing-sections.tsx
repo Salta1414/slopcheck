@@ -47,7 +47,7 @@ const FAQS = [
   },
   {
     q: "What do I get for €5?",
-    a: "The strong full review: score, concrete findings, and copy-paste fix prompts for tools like Claude / Cursor. Share your score on X to get it free.",
+    a: "The full review plus a design kit you hand to your own AI (Claude Code, Cursor, v0): art direction, palette, type pairing, a plan per section and hand-made effect recipes like liquid glass. Share your score on X to get it free.",
   },
   {
     q: "Is this legal advice or a design guarantee?",
@@ -213,7 +213,7 @@ export function LandingSections() {
             </span>
           </p>
           <p className="relative z-10 mt-3 max-w-md text-base font-bold text-[var(--ink)]/75">
-            Screenshot → deep critique → copy-paste prompts. No subscription.
+            Screenshot → deep critique → a design kit for your AI. No subscription.
             Share your score on X and the full review is free.
           </p>
           <a

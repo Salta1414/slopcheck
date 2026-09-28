@@ -1,5 +1,6 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
+import { designKitValidator } from "./lib/kitValidator";
 
 export default defineSchema({
   users: defineTable({
@@ -152,6 +153,7 @@ export default defineSchema({
     ),
     criteriaScores: v.optional(v.record(v.string(), v.number())),
     rubricVersion: v.optional(v.number()),
+    kit: v.optional(designKitValidator),
     model: v.string(),
     createdAt: v.number(),
   }).index("by_scan", ["scanId"]),

@@ -316,8 +316,8 @@ function TeaserResult({
             revealDelayMs={animate ? COUNT_UP_MS + 450 : undefined}
           />
           <p className="mt-3 text-xs font-bold text-[var(--ink)]/55">
-            {scan.lockedCount} findings plus copy-paste fix prompts for Cursor,
-            v0 and Claude — unlocked by the full review.
+            {scan.lockedCount} findings plus a design kit for your AI —
+            palette, type, a plan per section and tested effect code.
           </p>
         </div>
       </div>
