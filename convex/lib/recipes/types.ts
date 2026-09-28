@@ -22,4 +22,9 @@ export type Recipe = {
   react: string;
   /** Short instruction to paste to an AI next to the code. */
   aiHint: string;
+  /**
+   * Staging for live previews (gallery, render tests): extra markup and
+   * styles around the recipe. Never part of what users copy.
+   */
+  demo: { html: string; css: string };
 };

@@ -359,4 +359,22 @@ export const liquidGlass: Recipe = {
   react,
   aiHint:
     "Use this liquid-glass recipe verbatim for at most one or two floating elements. Keep the fallback class and the reduced-transparency rule.",
+  demo: {
+    html: `<div class="stage-copy">
+  <p>Refraction lives at the rim.</p>
+  <p>The middle stays perfectly sharp.</p>
+</div>
+<nav class="liquid-glass stage-nav" data-liquid-glass data-bezel="14" data-strength="44">
+  <a href="#">Work</a><a href="#">About</a><a href="#">Contact</a>
+</nav>`,
+    css: `body{margin:0;min-height:100vh;font-family:system-ui,sans-serif;background:
+radial-gradient(circle at 22% 38%,#ff5a7a 0 13%,transparent 14%),
+radial-gradient(circle at 70% 45%,#2ee6a6 0 17%,transparent 18%),
+radial-gradient(circle at 48% 85%,#ffe566 0 14%,transparent 15%),
+repeating-linear-gradient(90deg,#1a1523 0 38px,#2a2140 38px 76px)}
+.stage-copy{padding:48px 40px;color:#fff;font:900 52px/1.1 Georgia,serif}
+.stage-copy p{margin:0}
+.liquid-glass.stage-nav{position:absolute;top:70px;left:50%;transform:translateX(-50%);display:flex;gap:26px;padding:16px 28px}
+.stage-nav a{color:#fff;font-weight:700;text-decoration:none;font-size:18px}`,
+  },
 };

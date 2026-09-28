@@ -123,4 +123,19 @@ export const frostedGlass: Recipe = {
   react,
   aiHint:
     "Use this frosted recipe for sticky/floating surfaces only. Keep saturate(), the rim shadows, the grain and both fallbacks; don't turn every card into glass.",
+  demo: {
+    html: `<p class="stage-bg">Busy background text that would ruin a naive glass card.</p>
+<div class="stage-row">
+  <div class="frosted stage-card"><h3>Ships Friday</h3><p>Readable on anything — the color underneath stays.</p></div>
+  <div class="frosted frosted--dark stage-card"><h3>Dark variant</h3><p>Tinted, not grey.</p></div>
+</div>`,
+    css: `body{margin:0;min-height:100vh;font-family:system-ui,sans-serif;background:
+radial-gradient(circle at 25% 45%,#ff5a7a 0 14%,transparent 15%),
+radial-gradient(circle at 68% 50%,#2ee6a6 0 18%,transparent 19%),
+radial-gradient(circle at 45% 90%,#ffe566 0 15%,transparent 16%),
+repeating-linear-gradient(90deg,#fff8f0 0 38px,#ffe0ea 38px 76px)}
+.stage-bg{position:absolute;top:20px;left:32px;right:32px;margin:0;font:900 50px/1.05 Georgia,serif;color:#1a1523;opacity:.85}
+.stage-row{position:relative;display:flex;flex-wrap:wrap;gap:24px;padding:80px 32px 32px}
+.stage-card{padding:20px 24px;width:280px}.stage-card h3{margin:0 0 6px;font-size:21px}.stage-card p{margin:0;font-size:15px;line-height:1.4}`,
+  },
 };
