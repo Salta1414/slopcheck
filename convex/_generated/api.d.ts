@@ -8,10 +8,13 @@
  * @module
  */
 
+import type * as evalActions from "../evalActions.js";
 import type * as feedback from "../feedback.js";
 import type * as http from "../http.js";
 import type * as lib_auth from "../lib/auth.js";
+import type * as lib_goldenSites from "../lib/goldenSites.js";
 import type * as lib_openrouter from "../lib/openrouter.js";
+import type * as lib_preeval from "../lib/preeval.js";
 import type * as lib_rubric from "../lib/rubric.js";
 import type * as lib_screenshots from "../lib/screenshots.js";
 import type * as owner from "../owner.js";
@@ -34,10 +37,13 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  evalActions: typeof evalActions;
   feedback: typeof feedback;
   http: typeof http;
   "lib/auth": typeof lib_auth;
+  "lib/goldenSites": typeof lib_goldenSites;
   "lib/openrouter": typeof lib_openrouter;
+  "lib/preeval": typeof lib_preeval;
   "lib/rubric": typeof lib_rubric;
   "lib/screenshots": typeof lib_screenshots;
   owner: typeof owner;

@@ -43,6 +43,12 @@ export default defineSchema({
     teaserFlags: v.optional(v.array(v.string())),
     lockedFindings: v.optional(v.array(v.string())),
     lockedPrompts: v.optional(v.array(v.string())),
+    /** Scoring v2 detail: checklist tells + per-criterion 0–10 ratings. */
+    slopTells: v.optional(
+      v.array(v.object({ id: v.string(), evidence: v.string() })),
+    ),
+    criteriaScores: v.optional(v.record(v.string(), v.number())),
+    rubricVersion: v.optional(v.number()),
     preevalModel: v.optional(v.string()),
     screenshotProvider: v.optional(v.string()),
     screenshotStorageId: v.optional(v.id("_storage")),
@@ -141,6 +147,11 @@ export default defineSchema({
         prompt: v.string(),
       }),
     ),
+    tells: v.optional(
+      v.array(v.object({ id: v.string(), evidence: v.string() })),
+    ),
+    criteriaScores: v.optional(v.record(v.string(), v.number())),
+    rubricVersion: v.optional(v.number()),
     model: v.string(),
     createdAt: v.number(),
   }).index("by_scan", ["scanId"]),

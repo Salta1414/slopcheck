@@ -73,7 +73,8 @@ async function callOpenRouterVision(args: {
     },
     body: JSON.stringify({
       model: args.model,
-      temperature: 0.2,
+      // Scoring should be repeatable, not creative.
+      temperature: 0,
       ...(args.useJsonObjectFormat
         ? { response_format: { type: "json_object" } }
         : {}),

@@ -1,5 +1,21 @@
 # Scoring Rubric — AI Slop UI
 
+> **v2 (aktuell):** Die KI liefert keine Gesamtzahl mehr. Sie liefert
+> `captureStatus`, 0–10 pro Dimension und eine Checkliste sichtbarer
+> „Tells" mit Beleg. Der Score wird in `convex/lib/rubric.ts` berechnet:
+>
+> `score = (gewichtete Dimensionen + min(100, Tells × 12.5)) / 2`
+>
+> - Tells ohne Beleg oder mit unbekannter ID werden verworfen.
+> - `captureStatus` ≠ `ok` (Bot-Check, Cookie-Wall, Fehlerseite, leer) →
+>   Scan schlägt mit klarer Meldung fehl, es wird nichts bewertet.
+> - Temperatur 0; Cache greift nur für Ergebnisse derselben `RUBRIC_VERSION`.
+> - Eichtest: `npx convex run evalActions:runGolden '{"runs": 3}'` gegen
+>   `convex/lib/goldenSites.ts` — falsch bewertete Seiten dort ergänzen.
+>
+> Die Tabelle unten beschreibt die Dimensionen weiterhin; die Tell-Liste
+> steht im Code (`TELLS`).
+
 Ziel: **nachvollziehbare**, wiederholbare Bewertung. Nicht „vibes only“.
 
 Score: **0–100** (höher = mehr Slop).

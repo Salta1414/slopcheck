@@ -1,6 +1,11 @@
 import { v } from "convex/values";
 import { internalMutation } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
+import { RUBRIC_VERSION, scoreToVerdict } from "./lib/rubric";
+
+const tellsValidator = v.array(
+  v.object({ id: v.string(), evidence: v.string() }),
+);
 
 const verdictValidator = v.union(
   v.literal("fresh"),
@@ -26,6 +31,9 @@ export const upsertGuestPreeval = internalMutation({
     teaserFlags: v.optional(v.array(v.string())),
     lockedFindings: v.optional(v.array(v.string())),
     lockedPrompts: v.optional(v.array(v.string())),
+    slopTells: v.optional(tellsValidator),
+    criteriaScores: v.optional(v.record(v.string(), v.number())),
+    rubricVersion: v.optional(v.number()),
     preevalModel: v.optional(v.string()),
     screenshotProvider: v.optional(v.string()),
     screenshotStorageId: v.optional(v.id("_storage")),
@@ -49,6 +57,9 @@ export const upsertGuestPreeval = internalMutation({
       teaserFlags: args.teaserFlags,
       lockedFindings: args.lockedFindings,
       lockedPrompts: args.lockedPrompts,
+      slopTells: args.slopTells,
+      criteriaScores: args.criteriaScores,
+      rubricVersion: args.rubricVersion,
       preevalModel: args.preevalModel,
       screenshotProvider: args.screenshotProvider,
       screenshotStorageId: args.screenshotStorageId,
@@ -100,6 +111,8 @@ export const reservePreeval = internalMutation({
       teaserFlags: v.array(v.string()),
       lockedFindings: v.array(v.string()),
       lockedPrompts: v.array(v.string()),
+      slopTells: v.optional(tellsValidator),
+      criteriaScores: v.optional(v.record(v.string(), v.number())),
       preevalModel: v.optional(v.string()),
       screenshotProvider: v.optional(v.string()),
       screenshotStorageId: v.optional(v.id("_storage")),
@@ -121,6 +134,8 @@ export const reservePreeval = internalMutation({
 
     const cached = recent.find(
       (scan) =>
+        // Never serve a result scored by an older rubric.
+        scan.rubricVersion === RUBRIC_VERSION &&
         scan.estimatedScore !== undefined &&
         scan.verdict !== undefined &&
         (scan.teaserFlags?.length ?? 0) > 0 &&
@@ -140,6 +155,8 @@ export const reservePreeval = internalMutation({
         teaserFlags: cached.teaserFlags ?? [],
         lockedFindings: cached.lockedFindings ?? [],
         lockedPrompts: cached.lockedPrompts ?? [],
+        slopTells: cached.slopTells,
+        criteriaScores: cached.criteriaScores,
         preevalModel: cached.preevalModel,
         screenshotProvider: cached.screenshotProvider,
         screenshotStorageId: cached.screenshotStorageId,
@@ -332,6 +349,8 @@ export const saveFullReview = internalMutation({
         prompt: v.string(),
       }),
     ),
+    tells: tellsValidator,
+    criteriaScores: v.record(v.string(), v.number()),
     model: v.string(),
     screenshotStorageId: v.optional(v.id("_storage")),
     mobileScreenshotStorageId: v.optional(v.id("_storage")),
@@ -351,6 +370,9 @@ export const saveFullReview = internalMutation({
         summary: args.summary,
         findings: args.findings,
         prompts: args.prompts,
+        tells: args.tells,
+        criteriaScores: args.criteriaScores,
+        rubricVersion: RUBRIC_VERSION,
         model: args.model,
       });
       reviewId = existing._id;
@@ -362,6 +384,9 @@ export const saveFullReview = internalMutation({
         summary: args.summary,
         findings: args.findings,
         prompts: args.prompts,
+        tells: args.tells,
+        criteriaScores: args.criteriaScores,
+        rubricVersion: RUBRIC_VERSION,
         model: args.model,
         createdAt: now,
       });
@@ -370,12 +395,15 @@ export const saveFullReview = internalMutation({
     const scanPatch: {
       status: "ready";
       score: number;
+      verdict: ReturnType<typeof scoreToVerdict>;
       updatedAt: number;
       screenshotStorageId?: Id<"_storage">;
       mobileScreenshotStorageId?: Id<"_storage">;
     } = {
       status: "ready",
       score: args.score,
+      // The label follows the full review, not the earlier estimate.
+      verdict: scoreToVerdict(args.score),
       updatedAt: now,
     };
     if (args.screenshotStorageId) {

@@ -9,9 +9,10 @@ import {
   parseJsonObject,
   preevalModel,
 } from "./lib/openrouter";
+import { buildPreevalResult } from "./lib/preeval";
 import {
   PREEVAL_SYSTEM_PROMPT,
-  scoreToVerdict,
+  RUBRIC_VERSION,
   type SlopVerdict,
 } from "./lib/rubric";
 import { captureDesktopScreenshotBase64 } from "./lib/screenshots";
@@ -46,65 +47,6 @@ function normalizeAndValidateUrl(raw: string): string {
 
   url.hash = "";
   return url.toString().replace(/\/$/, "");
-}
-
-type PreevalJson = {
-  estimatedScore?: unknown;
-  verdict?: unknown;
-  teaserFlags?: unknown;
-  lockedFindings?: unknown;
-  lockedPrompts?: unknown;
-};
-
-function asStringArray(value: unknown): string[] {
-  if (!Array.isArray(value)) return [];
-  return value
-    .filter((item): item is string => typeof item === "string")
-    .map((s) => s.trim())
-    .filter(Boolean);
-}
-
-/**
- * Validate the model output. Never fill gaps with canned findings — a guessed
- * verdict that looks real is worse than an honest "try again".
- */
-function normalizePreeval(raw: unknown): {
-  estimatedScore: number;
-  verdict: SlopVerdict;
-  teaserFlags: string[];
-  lockedFindings: string[];
-  lockedPrompts: string[];
-} {
-  const data = (raw ?? {}) as PreevalJson;
-  const teaserFlags = asStringArray(data.teaserFlags).slice(0, 3);
-  const lockedFindings = asStringArray(data.lockedFindings).slice(0, 6);
-  const lockedPrompts = asStringArray(data.lockedPrompts).slice(0, 5);
-
-  if (
-    typeof data.estimatedScore !== "number" ||
-    !Number.isFinite(data.estimatedScore) ||
-    teaserFlags.length === 0 ||
-    lockedFindings.length === 0 ||
-    lockedPrompts.length === 0
-  ) {
-    throw new Error(
-      "The AI returned an incomplete result for this site. Please try again.",
-    );
-  }
-
-  const estimatedScore = Math.max(
-    0,
-    Math.min(100, Math.round(data.estimatedScore)),
-  );
-
-  return {
-    estimatedScore,
-    // Derive from the score so the label can never contradict the number.
-    verdict: scoreToVerdict(estimatedScore),
-    teaserFlags,
-    lockedFindings,
-    lockedPrompts,
-  };
 }
 
 export const runPreeval = action({
@@ -178,6 +120,9 @@ export const runPreeval = action({
           teaserFlags: reservation.teaserFlags,
           lockedFindings: reservation.lockedFindings,
           lockedPrompts: reservation.lockedPrompts,
+          slopTells: reservation.slopTells,
+          criteriaScores: reservation.criteriaScores,
+          rubricVersion: RUBRIC_VERSION,
           preevalModel: reservation.preevalModel,
           screenshotProvider: reservation.screenshotProvider,
           screenshotStorageId: reservation.screenshotStorageId,
@@ -227,7 +172,7 @@ export const runPreeval = action({
         imagesBase64Png: [shot.base64],
       });
 
-      const parsed = normalizePreeval(parseJsonObject(content));
+      const parsed = buildPreevalResult(parseJsonObject(content));
 
       const scanId: Id<"scans"> = await ctx.runMutation(
         internal.scanInternal.upsertGuestPreeval,
@@ -239,6 +184,9 @@ export const runPreeval = action({
           teaserFlags: parsed.teaserFlags,
           lockedFindings: parsed.lockedFindings,
           lockedPrompts: parsed.lockedPrompts,
+          slopTells: parsed.scoring.tells,
+          criteriaScores: parsed.scoring.criteria,
+          rubricVersion: RUBRIC_VERSION,
           preevalModel: model,
           screenshotProvider: shot.provider,
           screenshotStorageId: storageId,

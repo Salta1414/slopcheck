@@ -163,6 +163,8 @@ function ScanDetailBody({
           summary={scan.review.summary}
           findings={scan.review.findings}
           prompts={scan.review.prompts}
+          tells={scan.review.tells}
+          tellsChecked={scan.review.tellsChecked}
         />
       ) : (
         <LockedTeaser

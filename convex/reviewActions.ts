@@ -8,7 +8,13 @@ import {
   openRouterVisionJson,
   parseJsonObject,
 } from "./lib/openrouter";
-import { FULL_REVIEW_SYSTEM_PROMPT, scoreToVerdict } from "./lib/rubric";
+import {
+  CaptureNotUsableError,
+  FULL_REVIEW_SYSTEM_PROMPT,
+  parseScoring,
+  scoreToVerdict,
+  type Scoring,
+} from "./lib/rubric";
 import { captureScreenshotBase64 } from "./lib/screenshots";
 import type { Id } from "./_generated/dataModel";
 
@@ -31,15 +37,14 @@ type PromptItem = {
 
 function normalizeFullReview(raw: unknown): {
   score: number;
+  scoring: Scoring;
   summary: string;
   findings: Finding[];
   prompts: PromptItem[];
 } {
   const data = (raw ?? {}) as Record<string, unknown>;
-  if (typeof data.score !== "number" || !Number.isFinite(data.score)) {
-    throw new Error("The AI returned a review without a score");
-  }
-  const score = Math.max(0, Math.min(100, Math.round(data.score)));
+  const scoring = parseScoring(raw);
+  const score = scoring.score;
 
   const summary =
     typeof data.summary === "string" && data.summary.trim()
@@ -100,7 +105,7 @@ function normalizeFullReview(raw: unknown): {
     throw new Error("The AI returned an incomplete review");
   }
 
-  return { score, summary, findings, prompts };
+  return { score, scoring, summary, findings, prompts };
 }
 
 export const runFullReview = internalAction({
@@ -198,6 +203,8 @@ export const runFullReview = internalAction({
           parsed = normalizeFullReview(parseJsonObject(content));
         } catch (error) {
           lastError = error;
+          // Asking again won't un-block a cookie wall.
+          if (error instanceof CaptureNotUsableError) break;
         }
       }
       if (!parsed) {
@@ -213,6 +220,8 @@ export const runFullReview = internalAction({
         summary: parsed.summary,
         findings: parsed.findings,
         prompts: parsed.prompts,
+        tells: parsed.scoring.tells,
+        criteriaScores: parsed.scoring.criteria,
         model,
         screenshotStorageId,
         mobileScreenshotStorageId,

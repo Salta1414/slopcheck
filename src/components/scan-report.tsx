@@ -15,6 +15,8 @@ type Finding = {
   fixHint: string;
 };
 
+type Tell = { id: string; label: string; evidence: string };
+
 type PromptItem = {
   tool: string;
   title: string;
@@ -30,6 +32,8 @@ export function ScanReport({
   summary,
   findings,
   prompts,
+  tells,
+  tellsChecked,
 }: {
   scanId: Id<"scans">;
   guestKey?: string;
@@ -39,6 +43,8 @@ export function ScanReport({
   summary: string;
   findings: Finding[];
   prompts: PromptItem[];
+  tells: Tell[];
+  tellsChecked: number;
 }) {
   return (
     <div className="space-y-8">
@@ -69,6 +75,36 @@ export function ScanReport({
           <FeedbackButton scanId={scanId} />
         </Show>
       </section>
+
+      {tellsChecked > 0 ? (
+        <section>
+          <h2 className="font-[family-name:var(--font-display)] text-2xl font-extrabold text-[var(--ink)]">
+            AI tells spotted · {tells.length}/{tellsChecked}
+          </h2>
+          {tells.length === 0 ? (
+            <p className="mt-3 text-sm font-semibold text-[var(--ink)]/70">
+              None of the classic template tells showed up. Nice.
+            </p>
+          ) : (
+            <ul className="mt-4 flex flex-wrap gap-2">
+              {tells.map((t, i) => (
+                <li
+                  key={t.id}
+                  style={{ ["--delay" as string]: `${100 + i * 60}ms` }}
+                  className="motion-pop rounded-2xl border-[3px] border-[var(--ink)] bg-[var(--accent-2)]/15 px-3 py-2 shadow-[2px_3px_0_var(--ink)]"
+                >
+                  <p className="text-sm font-black text-[var(--ink)]">
+                    {t.label}
+                  </p>
+                  <p className="text-xs font-semibold text-[var(--ink)]/65">
+                    {t.evidence}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      ) : null}
 
       <section>
         <h2 className="font-[family-name:var(--font-display)] text-2xl font-extrabold text-[var(--ink)]">
@@ -121,13 +157,7 @@ export function ScanReport({
   );
 }
 
-function PromptCard({
-  item,
-  delayMs,
-}: {
-  item: PromptItem;
-  delayMs: number;
-}) {
+function PromptCard({ item, delayMs }: { item: PromptItem; delayMs: number }) {
   const [copied, setCopied] = useState(false);
 
   async function copy() {
