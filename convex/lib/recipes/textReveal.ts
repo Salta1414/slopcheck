@@ -65,13 +65,15 @@ const js = `/* Splits [data-reveal] headings into masked words and reveals them 
     el.classList.add("reveal", "reveal--ready");
   });
 
+  // threshold 0 + a bottom margin: tall multi-line headings (narrow phones)
+  // may never be 30% visible at once, so don't wait for a ratio.
   var observer = new IntersectionObserver(function (entries) {
     entries.forEach(function (entry) {
       if (!entry.isIntersecting) return;
       entry.target.classList.add("is-revealed");
       observer.unobserve(entry.target);
     });
-  }, { threshold: 0.3 });
+  }, { threshold: 0, rootMargin: "0px 0px -10% 0px" });
 
   headings.forEach(function (el) { observer.observe(el); });
 })();`;
@@ -105,7 +107,8 @@ export function RevealHeading({
           observer.disconnect();
         }
       },
-      { threshold: 0.3 },
+      // threshold 0: tall headings may never be 30% visible at once.
+      { threshold: 0, rootMargin: "0px 0px -10% 0px" },
     );
     observer.observe(el);
     return () => observer.disconnect();
@@ -164,6 +167,6 @@ export const textReveal: Recipe = {
 </div>`,
     css: `body{margin:0;min-height:100vh;background:#f4f1ea;color:#1c1b22;font-family:Georgia,serif}
 .stage{padding:60px 40px}.stage-kicker{font:600 13px/1 system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#8a8578;margin:0 0 18px}
-h1{font-size:60px;line-height:1.05;margin:0;max-width:14ch;font-weight:700}`,
+h1{font-size:clamp(30px,7vw,60px);line-height:1.05;margin:0;max-width:14ch;font-weight:700}`,
   },
 };

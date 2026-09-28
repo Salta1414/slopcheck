@@ -372,7 +372,7 @@ radial-gradient(circle at 22% 38%,#ff5a7a 0 13%,transparent 14%),
 radial-gradient(circle at 70% 45%,#2ee6a6 0 17%,transparent 18%),
 radial-gradient(circle at 48% 85%,#ffe566 0 14%,transparent 15%),
 repeating-linear-gradient(90deg,#1a1523 0 38px,#2a2140 38px 76px)}
-.stage-copy{padding:48px 40px;color:#fff;font:900 52px/1.1 Georgia,serif}
+.stage-copy{padding:48px 40px;color:#fff;font:900 clamp(26px,6vw,52px)/1.1 Georgia,serif}
 .stage-copy p{margin:0}
 .liquid-glass.stage-nav{position:absolute;top:70px;left:50%;transform:translateX(-50%);display:flex;gap:26px;padding:16px 28px}
 .stage-nav a{color:#fff;font-weight:700;text-decoration:none;font-size:18px}`,

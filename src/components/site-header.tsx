@@ -7,6 +7,7 @@ import {
   UserButton,
 } from "@clerk/nextjs";
 import Image from "next/image";
+import Link from "next/link";
 import { clerkAppearance } from "@/lib/clerk-appearance";
 
 export function SiteHeader() {
@@ -29,6 +30,12 @@ export function SiteHeader() {
       </a>
 
       <nav className="flex items-center gap-2 sm:gap-3">
+        <Link
+          href="/recipes"
+          className="hidden rounded-full px-3 py-2 text-sm font-extrabold text-[var(--ink)] underline decoration-[var(--accent)] decoration-[3px] underline-offset-4 transition hover:decoration-[var(--accent-2)] sm:inline-block"
+        >
+          Recipes
+        </Link>
         <Show when="signed-in">
           <a
             href="/scans"

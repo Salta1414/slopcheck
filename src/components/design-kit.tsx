@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { DesignKit } from "../../convex/lib/kit";
 import { buildBriefMarkdown } from "../../convex/lib/kitMarkdown";
 import { getRecipe, type Recipe } from "../../convex/lib/recipes";
+import { RecipeCode } from "@/components/recipe-code";
 
 type Props = {
   kit: DesignKit;
@@ -212,22 +213,8 @@ export function DesignKitPanel(props: Props) {
   );
 }
 
-type Tab = "css" | "js" | "html" | "react";
-
 function RecipeCard({ recipe }: { recipe: Recipe }) {
   const [open, setOpen] = useState(false);
-  const [tab, setTab] = useState<Tab>("css");
-  const [copied, setCopied] = useState(false);
-  const tabs: Tab[] = recipe.js
-    ? ["css", "js", "html", "react"]
-    : ["css", "html", "react"];
-  const code = tab === "js" ? (recipe.js ?? "") : recipe[tab];
-
-  async function copy() {
-    await navigator.clipboard.writeText(code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  }
 
   return (
     <article id={"recipe-" + recipe.id} className={card + " scroll-mt-6"}>
@@ -243,7 +230,15 @@ function RecipeCard({ recipe }: { recipe: Recipe }) {
             {recipe.summary}
           </p>
           <p className="mt-2 text-xs font-bold text-[var(--ink)]/55">
-            {recipe.support}
+            {recipe.support}{" "}
+            <a
+              href={"/recipes/" + recipe.id}
+              target="_blank"
+              rel="noreferrer"
+              className="underline underline-offset-2"
+            >
+              Live demo ↗
+            </a>
           </p>
         </div>
         <button
@@ -258,31 +253,7 @@ function RecipeCard({ recipe }: { recipe: Recipe }) {
 
       {open ? (
         <div className="motion-rise mt-4">
-          <div className="flex flex-wrap items-center gap-1.5">
-            {tabs.map((t) => (
-              <button
-                key={t}
-                type="button"
-                onClick={() => setTab(t)}
-                className={
-                  "rounded-full border-[2px] border-[var(--ink)] px-3 py-1 text-xs font-black uppercase " +
-                  (t === tab ? "bg-[var(--accent)]" : "bg-white")
-                }
-              >
-                {t}
-              </button>
-            ))}
-            <button
-              type="button"
-              onClick={() => void copy()}
-              className="ml-auto rounded-full border-[2px] border-[var(--ink)] bg-[var(--accent-3)] px-3 py-1 text-xs font-black"
-            >
-              {copied ? "Copied ✓" : "Copy"}
-            </button>
-          </div>
-          <pre className="mt-3 max-h-96 overflow-auto rounded-2xl border-[2px] border-[var(--ink)]/20 bg-[var(--bg)] p-3 text-xs font-semibold text-[var(--ink)]/85">
-            {code}
-          </pre>
+          <RecipeCode recipe={recipe} />
           <ul className="mt-3 space-y-1 text-xs font-semibold text-[var(--ink)]/65">
             {recipe.avoidWhen.map((a) => (
               <li key={a}>⚠️ {a}</li>

@@ -95,6 +95,6 @@ export const grainOverlay: Recipe = {
     html: `<h1 class="stage-title">Flat gradients, now with tooth.</h1>
 <div class="grain" aria-hidden="true"></div>`,
     css: `body{margin:0;min-height:100vh;background:linear-gradient(135deg,#ff9a6b,#ff5a7a 45%,#1a1523)}
-.stage-title{margin:0;padding:64px 40px;font:800 56px/1.05 system-ui,sans-serif;color:#fff;max-width:12ch}`,
+.stage-title{margin:0;padding:64px 40px;font:800 clamp(28px,7vw,56px)/1.05 system-ui,sans-serif;color:#fff;max-width:12ch}`,
   },
 };

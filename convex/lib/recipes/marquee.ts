@@ -135,7 +135,7 @@ export const marquee: Recipe = {
   </div>
 </div>`,
     css: `body{margin:0;min-height:100vh;display:grid;place-items:center;background:#f4f1ea;font-family:Georgia,serif;color:#1c1b22}
-.stage{width:100%}.marquee__track{list-style:none;margin:0;padding:0;font-size:40px;font-weight:700}
+.stage{width:100%}.marquee__track{list-style:none;margin:0;padding:0;font-size:clamp(22px,5vw,40px);font-weight:700}
 .marquee__track li::after{content:"✳";margin-left:3rem;color:#c8553d}`,
   },
 };

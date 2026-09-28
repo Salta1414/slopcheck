@@ -1,5 +1,5 @@
 import { kitRecipeIds, type DesignKit } from "./kit";
-import { getRecipe } from "./recipes";
+import { getRecipe, type Recipe } from "./recipes";
 
 type BriefInput = {
   url: string;
@@ -107,34 +107,42 @@ export function buildBriefMarkdown(input: BriefInput): string {
     out.push("");
   }
   for (const r of recipes) {
-    out.push("## Recipe: " + r.name + " (`" + r.id + "`)");
-    out.push("");
-    out.push(r.summary);
-    out.push("");
-    out.push("- **Note for the AI:** " + r.aiHint);
-    out.push("- **Avoid:** " + r.avoidWhen.join("; "));
-    out.push("- **Support:** " + r.support);
-    out.push("");
-    out.push("```html");
-    out.push(r.html);
-    out.push("```");
-    out.push("");
-    out.push("```css");
-    out.push(r.css);
-    out.push("```");
-    out.push("");
-    if (r.js) {
-      out.push("```js");
-      out.push(r.js);
-      out.push("```");
-      out.push("");
-    }
-    out.push("React version:");
-    out.push("");
-    out.push("```tsx");
-    out.push(r.react);
-    out.push("```");
+    out.push(recipeMarkdown(r));
     out.push("");
   }
   return out.join("\n");
+}
+
+/** One recipe as a self-contained markdown section for an AI. */
+export function recipeMarkdown(r: Recipe): string {
+  const out: string[] = [];
+  out.push("## Recipe: " + r.name + " (`" + r.id + "`)");
+  out.push("");
+  out.push(r.summary);
+  out.push("");
+  out.push("- **Note for the AI:** " + r.aiHint);
+  out.push("- **Avoid:** " + r.avoidWhen.join("; "));
+  out.push("- **Support:** " + r.support);
+  out.push("");
+  out.push("```html");
+  out.push(r.html);
+  out.push("```");
+  out.push("");
+  out.push("```css");
+  out.push(r.css);
+  out.push("```");
+  out.push("");
+  if (r.js) {
+    out.push("```js");
+    out.push(r.js);
+    out.push("```");
+    out.push("");
+  }
+  out.push("React version:");
+  out.push("");
+  out.push("```tsx");
+  out.push(r.react);
+  out.push("```");
+  out.push("");
+  return out.join("\n").trimEnd();
 }

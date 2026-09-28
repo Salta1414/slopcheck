@@ -114,6 +114,6 @@ export const meshGradient: Recipe = {
 </section>`,
     css: `body{margin:0;min-height:100vh;font-family:Georgia,serif}
 .stage{min-height:100vh;display:grid;place-items:center;padding:40px;box-sizing:border-box}
-.stage h1{margin:0;font-size:54px;line-height:1.05;color:#1c1b22;max-width:13ch;text-align:center}`,
+.stage h1{margin:0;font-size:clamp(26px,6vw,54px);line-height:1.05;color:#1c1b22;max-width:13ch;text-align:center}`,
   },
 };
