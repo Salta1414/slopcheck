@@ -2,10 +2,17 @@
 
 import { SignInButton, Show } from "@clerk/nextjs";
 import { useAction } from "convex/react";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { LockedFindings } from "@/components/locked-findings";
+import { ScanProgress } from "@/components/scan-progress";
+import {
+  COUNT_UP_MS,
+  ScoreMeter,
+  VerdictStamp,
+  useCountUp,
+} from "@/components/score-reveal";
 import { ShareForFreeButton } from "@/components/share-for-free-button";
 import { ShareScoreButton } from "@/components/share-score-button";
 import { UnlockButton } from "@/components/unlock-button";
@@ -21,6 +28,10 @@ export function HeroScanner() {
   const [url, setUrl] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [scan, setScan] = useState<GuestScan | null>(null);
+  // Only a result from this visit gets the big reveal — a restored scan
+  // from localStorage just sits there quietly.
+  const [justScanned, setJustScanned] = useState(false);
+  const [pendingHost, setPendingHost] = useState("");
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
@@ -30,6 +41,7 @@ export function HeroScanner() {
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setPendingHost(displayHost(url));
 
     startTransition(async () => {
       try {
@@ -48,6 +60,7 @@ export function HeroScanner() {
         };
         upsertGuestScan(guestScan);
         setScan(guestScan);
+        setJustScanned(true);
       } catch (err) {
         const message =
           err instanceof Error ? err.message : "Could not scan URL";
@@ -60,27 +73,46 @@ export function HeroScanner() {
     <section className="relative mx-auto flex w-full max-w-6xl flex-col gap-10 px-4 pb-16 pt-4 sm:px-6 lg:pt-8">
       <div className="relative z-10 grid items-center gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-8">
         <div className="max-w-3xl">
-          <p className="mb-3 inline-block animate-wiggle rounded-full border-[3px] border-[var(--ink)] bg-[var(--accent-3)] px-3 py-1 text-xs font-extrabold uppercase tracking-wide text-[var(--ink)] shadow-[3px_3px_0_var(--ink)]">
-            UI slop detector · €5 full review
-          </p>
+          <span className="motion-pop mb-3 inline-block">
+            <p className="inline-block animate-wiggle rounded-full border-[3px] border-[var(--ink)] bg-[var(--accent-3)] px-3 py-1 text-xs font-extrabold uppercase tracking-wide text-[var(--ink)] shadow-[3px_3px_0_var(--ink)]">
+              UI slop detector · €5 full review
+            </p>
+          </span>
           <h1 className="font-[family-name:var(--font-display)] text-4xl font-black leading-[1.05] tracking-tight text-[var(--ink)] sm:text-6xl">
-            Is your site{" "}
-            <span className="relative inline-block">
+            {["Is", "your", "site"].map((word, i) => (
+              <span
+                key={word}
+                className="motion-rise inline-block"
+                style={{ ["--delay" as string]: `${120 + i * 70}ms` }}
+              >
+                {word}&nbsp;
+              </span>
+            ))}
+            <span
+              className="motion-rise relative inline-block"
+              style={{ ["--delay" as string]: "360ms" }}
+            >
               <span className="relative z-10">AI slop?</span>
               <span
                 aria-hidden
-                className="absolute -bottom-1 left-0 right-0 h-3 rounded-full bg-[var(--accent)]/80"
+                className="motion-swipe absolute -bottom-1 left-0 right-0 h-3 rounded-full bg-[var(--accent)]/80"
+                style={{ ["--delay" as string]: "720ms" }}
               />
             </span>
           </h1>
-          <p className="mt-4 max-w-xl text-base font-medium text-[var(--ink)]/75 sm:text-lg">
-            Paste a URL. We screenshot it, score the UI, then unlock the full
-            analysis by sharing your score on X or paying.
+          <p
+            className="motion-rise mt-4 max-w-xl text-base font-medium text-[var(--ink)]/75 sm:text-lg"
+            style={{ ["--delay" as string]: "480ms" }}
+          >
+            Paste a URL. We screenshot it and score the UI for free. Unlock
+            the full review for €5 — no account needed — or share your score
+            on X.
           </p>
 
           <form
             onSubmit={onSubmit}
-            className="mt-8 flex w-full flex-col gap-3 sm:flex-row sm:items-stretch"
+            className="motion-rise mt-8 flex w-full flex-col gap-3 sm:flex-row sm:items-stretch"
+            style={{ ["--delay" as string]: "580ms" }}
           >
             <label className="sr-only" htmlFor="site-url">
               Website URL
@@ -99,7 +131,7 @@ export function HeroScanner() {
             <button
               type="submit"
               disabled={isPending || url.trim().length < 3}
-              className="min-h-14 shrink-0 rounded-[1.4rem] border-[3px] border-[var(--ink)] bg-[var(--accent)] px-7 text-base font-black text-[var(--ink)] shadow-[4px_5px_0_var(--ink)] transition enabled:hover:translate-y-[2px] enabled:hover:shadow-[2px_3px_0_var(--ink)] disabled:cursor-not-allowed disabled:opacity-50"
+              className="squish-press min-h-14 shrink-0 rounded-[1.4rem] border-[3px] border-[var(--ink)] bg-[var(--accent)] px-7 text-base font-black text-[var(--ink)] shadow-[4px_5px_0_var(--ink)] transition enabled:hover:translate-y-[2px] enabled:hover:shadow-[2px_3px_0_var(--ink)] disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isPending ? "Sniffing…" : "Check UI"}
             </button>
@@ -118,8 +150,24 @@ export function HeroScanner() {
         <HeroBlobVideo />
       </div>
 
-      {isPending ? <ScanningBlob /> : null}
-      {scan && !isPending ? <TeaserResult scan={scan} /> : null}
+      {isPending ? (
+        <ScanProgress
+          title="Sniffing for slop…"
+          steps={[
+            `Screenshotting ${pendingHost || "your site"}…`,
+            "Waiting for lazy heroes to show up…",
+            "Squinting at your fonts…",
+            "Counting purple gradients…",
+            "Checking for three identical cards…",
+            "Measuring hero mush…",
+            "Asking the slop oracle…",
+            "Almost there — writing it down…",
+          ]}
+        />
+      ) : null}
+      {scan && !isPending ? (
+        <TeaserResult key={scan.guestKey} scan={scan} animate={justScanned} />
+      ) : null}
     </section>
   );
 }
@@ -128,7 +176,8 @@ function HeroBlobVideo() {
   return (
     <div
       aria-hidden
-      className="mx-auto w-[220px] justify-self-center sm:w-[240px] lg:w-[260px] lg:justify-self-end"
+      className="motion-pop mx-auto w-[220px] justify-self-center sm:w-[240px] lg:w-[260px] lg:justify-self-end"
+      style={{ ["--delay" as string]: "300ms" }}
     >
       <div className="overflow-hidden rounded-[1.8rem] border-[3px] border-[var(--ink)] bg-white shadow-[5px_6px_0_var(--ink)]">
         <video
@@ -146,50 +195,79 @@ function HeroBlobVideo() {
   );
 }
 
-function ScanningBlob() {
-  return (
-    <div className="animate-squish rounded-[2rem] border-[3px] border-[var(--ink)] bg-white p-6 shadow-[5px_6px_0_var(--ink)]">
-      <p className="font-[family-name:var(--font-display)] text-xl font-extrabold text-[var(--ink)]">
-        Squishing pixels… sniffing for slop…
-      </p>
-      <p className="mt-1 text-sm font-medium text-[var(--ink)]/60">
-        Capturing screenshot and scoring the UI…
-      </p>
-    </div>
-  );
-}
+function TeaserResult({
+  scan,
+  animate,
+}: {
+  scan: GuestScan;
+  animate: boolean;
+}) {
+  const shownScore = useCountUp(scan.estimatedScore, animate);
+  const root = useRef<HTMLDivElement>(null);
+  // Cards land after the stamp; without a fresh reveal nothing is delayed.
+  const after = (offsetMs: number) =>
+    animate
+      ? {
+          className: "motion-rise",
+          style: { ["--delay" as string]: `${COUNT_UP_MS + offsetMs}ms` },
+        }
+      : { className: "", style: undefined };
 
-function TeaserResult({ scan }: { scan: GuestScan }) {
-  const label = verdictLabel(scan.verdict);
+  useEffect(() => {
+    if (!animate || !root.current) return;
+    const reduce = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    root.current.scrollIntoView({
+      behavior: reduce ? "auto" : "smooth",
+      block: "nearest",
+    });
+  }, [animate]);
 
   return (
     <div
+      ref={root}
       id="result"
-      className="overflow-hidden rounded-[2rem] border-[3px] border-[var(--ink)] bg-white shadow-[6px_8px_0_var(--ink)]"
+      className={`${animate ? "motion-rise" : ""} scroll-mt-6 overflow-hidden rounded-[2rem] border-[3px] border-[var(--ink)] bg-white shadow-[6px_8px_0_var(--ink)]`}
     >
-      <div className="flex flex-col gap-6 border-b-[3px] border-[var(--ink)] p-6 sm:flex-row sm:items-end sm:justify-between sm:p-8">
+      <div
+        className={`${animate ? "motion-thud" : ""} flex flex-col gap-6 border-b-[3px] border-[var(--ink)] p-6 sm:flex-row sm:items-end sm:justify-between sm:p-8`}
+        style={{ ["--delay" as string]: `${COUNT_UP_MS + 60}ms` }}
+      >
         <div>
           <p className="text-xs font-extrabold uppercase tracking-wide text-[var(--ink)]/50">
             UI Slop Score · estimate
           </p>
-          <div className="mt-2 flex items-end gap-3">
-            <span className="font-[family-name:var(--font-display)] text-6xl font-black leading-none text-[var(--ink)] sm:text-7xl">
-              {scan.estimatedScore}
+          <div className="mt-2 flex items-end gap-4">
+            <span
+              className="font-[family-name:var(--font-display)] text-6xl font-black leading-none tabular-nums text-[var(--ink)] sm:text-7xl"
+              aria-label={`${scan.estimatedScore} out of 100`}
+            >
+              {shownScore}
             </span>
-            <span className="mb-2 rounded-full border-[3px] border-[var(--ink)] bg-[var(--accent-3)] px-3 py-1 text-sm font-extrabold text-[var(--ink)]">
-              {label}
+            <span className="mb-2">
+              <VerdictStamp verdict={scan.verdict} animate={animate} />
             </span>
           </div>
+          <ScoreMeter
+            score={scan.estimatedScore}
+            verdict={scan.verdict}
+            animate={animate}
+          />
           <p className="mt-2 max-w-md truncate text-sm font-semibold text-[var(--ink)]/65">
             {scan.normalizedUrl}
           </p>
         </div>
 
         {scan.scanId ? (
-          <div className="flex flex-col gap-3 sm:items-end">
+          <div
+            className={`${after(250).className} flex flex-col gap-3 sm:items-end`}
+            style={after(250).style}
+          >
             <UnlockButton
               scanId={scan.scanId as Id<"scans">}
               guestKey={scan.guestKey}
+              nudge
             />
             <p className="text-xs font-bold text-[var(--ink)]/55 sm:text-right">
               No account needed · secure checkout via Stripe
@@ -217,10 +295,11 @@ function TeaserResult({ scan }: { scan: GuestScan }) {
             Visible teaser
           </h2>
           <ul className="mt-3 space-y-2">
-            {scan.teaserFlags.map((flag) => (
+            {scan.teaserFlags.map((flag, i) => (
               <li
                 key={flag}
-                className="rounded-2xl border-[3px] border-[var(--ink)] bg-[var(--bg)] px-4 py-3 text-sm font-semibold text-[var(--ink)]"
+                className={`${after(350 + i * 90).className} rounded-2xl border-[3px] border-[var(--ink)] bg-[var(--bg)] px-4 py-3 text-sm font-semibold text-[var(--ink)]`}
+                style={after(350 + i * 90).style}
               >
                 {flag}
               </li>
@@ -232,7 +311,10 @@ function TeaserResult({ scan }: { scan: GuestScan }) {
           <h2 className="font-[family-name:var(--font-display)] text-lg font-extrabold text-[var(--ink)]">
             Full findings
           </h2>
-          <LockedFindings count={scan.lockedCount} />
+          <LockedFindings
+            count={scan.lockedCount}
+            revealDelayMs={animate ? COUNT_UP_MS + 450 : undefined}
+          />
           <p className="mt-3 text-xs font-bold text-[var(--ink)]/55">
             {scan.lockedCount} findings plus copy-paste fix prompts for Cursor,
             v0 and Claude — unlocked by the full review.
@@ -260,15 +342,13 @@ function FreeViaXHint() {
   );
 }
 
-function verdictLabel(verdict: GuestScan["verdict"]): string {
-  switch (verdict) {
-    case "fresh":
-      return "Pretty fresh";
-    case "mixed":
-      return "Mixed vibes";
-    case "likely_slop":
-      return "Likely slop";
-    case "peak_slop":
-      return "Peak slop";
+function displayHost(raw: string): string {
+  try {
+    const withProtocol = /^https?:\/\//i.test(raw.trim())
+      ? raw.trim()
+      : `https://${raw.trim()}`;
+    return new URL(withProtocol).hostname.replace(/^www\./, "");
+  } catch {
+    return "";
   }
 }

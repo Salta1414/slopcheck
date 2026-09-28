@@ -8,10 +8,13 @@ import type { Id } from "../../convex/_generated/dataModel";
 export function UnlockButton({
   scanId,
   guestKey,
+  nudge = false,
 }: {
   scanId: Id<"scans">;
   /** Lets guests pay without an account. */
   guestKey?: string;
+  /** Occasional attention wiggle for the main CTA. */
+  nudge?: boolean;
 }) {
   const createCheckout = useAction(api.payments.createCheckoutSession);
   const [pending, setPending] = useState(false);
@@ -31,14 +34,18 @@ export function UnlockButton({
 
   return (
     <div className="flex flex-col items-end gap-2">
-      <button
-        type="button"
-        onClick={() => void onUnlock()}
-        disabled={pending}
-        className="rounded-full border-[3px] border-[var(--ink)] bg-[var(--accent)] px-5 py-2.5 text-sm font-black text-[var(--ink)] shadow-[3px_3px_0_var(--ink)] transition enabled:hover:translate-y-[1px] enabled:hover:shadow-[2px_2px_0_var(--ink)] disabled:opacity-60"
+      <span
+        className={nudge && !pending ? "motion-nudge inline-block" : "inline-block"}
       >
-        {pending ? "Opening Stripe…" : "Unlock full review · €5"}
-      </button>
+        <button
+          type="button"
+          onClick={() => void onUnlock()}
+          disabled={pending}
+          className="squish-press rounded-full border-[3px] border-[var(--ink)] bg-[var(--accent)] px-5 py-2.5 text-sm font-black text-[var(--ink)] shadow-[3px_3px_0_var(--ink)] transition enabled:hover:translate-y-[1px] enabled:hover:shadow-[2px_2px_0_var(--ink)] disabled:opacity-60"
+        >
+          {pending ? "Opening Stripe…" : "Unlock full review · €5"}
+        </button>
+      </span>
       {error ? (
         <p className="max-w-xs text-right text-xs font-bold text-[var(--accent-2)]">
           {error}

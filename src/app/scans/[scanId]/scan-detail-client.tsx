@@ -8,6 +8,7 @@ import { useSyncExternalStore } from "react";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { LockedFindings } from "@/components/locked-findings";
+import { ScanProgress } from "@/components/scan-progress";
 import { ScanReport } from "@/components/scan-report";
 import { ShareForFreeButton } from "@/components/share-for-free-button";
 import { UnlockButton } from "@/components/unlock-button";
@@ -136,6 +137,21 @@ function ScanDetailBody({
         <p className="rounded-2xl border-[3px] border-[var(--ink)] bg-[var(--accent-2)]/20 px-4 py-3 text-sm font-extrabold">
           Checkout canceled — you can try again anytime.
         </p>
+      ) : null}
+      {processing && !scan.review ? (
+        <ScanProgress
+          title="Cooking your full review…"
+          durationMs={60000}
+          steps={[
+            "Grabbing desktop and mobile screenshots…",
+            "Reading your hero like a picky designer…",
+            "Poking at the mobile nav…",
+            "Judging your font pairing (lovingly)…",
+            "Writing concrete findings…",
+            "Drafting copy-paste fix prompts…",
+            "Double-checking before we serve it…",
+          ]}
+        />
       ) : null}
       {scan.review ? (
         <ScanReport

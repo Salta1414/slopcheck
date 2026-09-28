@@ -42,7 +42,7 @@ export function ScanReport({
 }) {
   return (
     <div className="space-y-8">
-      <section className="rounded-[2rem] border-[3px] border-[var(--ink)] bg-white p-6 shadow-[5px_6px_0_var(--ink)] sm:p-8">
+      <section className="motion-rise rounded-[2rem] border-[3px] border-[var(--ink)] bg-white p-6 shadow-[5px_6px_0_var(--ink)] sm:p-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p className="text-xs font-extrabold uppercase tracking-wide text-[var(--ink)]/50">
@@ -75,10 +75,11 @@ export function ScanReport({
           Findings
         </h2>
         <ul className="mt-4 space-y-3">
-          {findings.map((f) => (
+          {findings.map((f, i) => (
             <li
               key={`${f.area}-${f.issue}`}
-              className="rounded-[1.5rem] border-[3px] border-[var(--ink)] bg-white p-4 shadow-[3px_4px_0_var(--ink)]"
+              style={{ ["--delay" as string]: `${150 + i * 80}ms` }}
+              className="motion-rise rounded-[1.5rem] border-[3px] border-[var(--ink)] bg-white p-4 shadow-[3px_4px_0_var(--ink)]"
             >
               <div className="flex flex-wrap items-center gap-2">
                 <span className="rounded-full border-[2px] border-[var(--ink)] bg-[var(--accent-3)] px-2 py-0.5 text-xs font-extrabold uppercase">
@@ -107,8 +108,12 @@ export function ScanReport({
           Fix prompts
         </h2>
         <div className="mt-4 space-y-3">
-          {prompts.map((p) => (
-            <PromptCard key={`${p.tool}-${p.title}`} item={p} />
+          {prompts.map((p, i) => (
+            <PromptCard
+              key={`${p.tool}-${p.title}`}
+              item={p}
+              delayMs={150 + (findings.length + i) * 80}
+            />
           ))}
         </div>
       </section>
@@ -116,7 +121,13 @@ export function ScanReport({
   );
 }
 
-function PromptCard({ item }: { item: PromptItem }) {
+function PromptCard({
+  item,
+  delayMs,
+}: {
+  item: PromptItem;
+  delayMs: number;
+}) {
   const [copied, setCopied] = useState(false);
 
   async function copy() {
@@ -126,7 +137,10 @@ function PromptCard({ item }: { item: PromptItem }) {
   }
 
   return (
-    <article className="rounded-[1.5rem] border-[3px] border-[var(--ink)] bg-white p-4 shadow-[3px_4px_0_var(--ink)]">
+    <article
+      className="motion-rise rounded-[1.5rem] border-[3px] border-[var(--ink)] bg-white p-4 shadow-[3px_4px_0_var(--ink)]"
+      style={{ ["--delay" as string]: `${delayMs}ms` }}
+    >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <p className="text-xs font-extrabold uppercase tracking-wide text-[var(--ink)]/50">
@@ -139,9 +153,15 @@ function PromptCard({ item }: { item: PromptItem }) {
         <button
           type="button"
           onClick={() => void copy()}
-          className="rounded-full border-[3px] border-[var(--ink)] bg-[var(--accent)] px-4 py-2 text-xs font-black text-[var(--ink)] shadow-[2px_2px_0_var(--ink)]"
+          className="squish-press rounded-full border-[3px] border-[var(--ink)] bg-[var(--accent)] px-4 py-2 text-xs font-black text-[var(--ink)] shadow-[2px_2px_0_var(--ink)] transition"
         >
-          {copied ? "Copied!" : "Copy prompt"}
+          {copied ? (
+            <span key="copied" className="motion-pop inline-block">
+              Copied! ✓
+            </span>
+          ) : (
+            "Copy prompt"
+          )}
         </button>
       </div>
       <pre className="mt-3 overflow-x-auto whitespace-pre-wrap rounded-2xl border-[2px] border-[var(--ink)]/20 bg-[var(--bg)] p-3 text-xs font-semibold text-[var(--ink)]/80">

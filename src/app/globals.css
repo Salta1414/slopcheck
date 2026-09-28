@@ -128,6 +128,209 @@ body::before {
   animation-delay: 0.6s;
 }
 
+/* ── Entrance + reveal motion ─────────────────────────────────────────────
+   CSS-only so the hero never flashes before JS hydrates. Everything below is
+   opt-in via classes and switched off for prefers-reduced-motion. */
+@keyframes pop-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.4) rotate(-8deg);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.08) rotate(2deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+@keyframes rise-in {
+  0% {
+    opacity: 0;
+    transform: translateY(28px) scale(0.96, 1.04);
+  }
+  65% {
+    opacity: 1;
+    transform: translateY(-4px) scale(1.02, 0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes swipe-in {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes scan-sweep {
+  0% {
+    transform: translateY(-10%);
+  }
+  50% {
+    transform: translateY(1000%);
+  }
+  100% {
+    transform: translateY(-10%);
+  }
+}
+
+/* Crawls toward ~92% and waits there — the real finish replaces the panel. */
+@keyframes progress-crawl {
+  0% {
+    transform: scaleX(0.04);
+  }
+  100% {
+    transform: scaleX(0.92);
+  }
+}
+
+@keyframes status-in {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) rotate(-2deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) rotate(0deg);
+  }
+}
+
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+@keyframes stamp-slam {
+  0% {
+    opacity: 0;
+    transform: scale(2.6) rotate(-24deg);
+  }
+  55% {
+    opacity: 1;
+    transform: scale(0.9) rotate(-4deg);
+  }
+  75% {
+    transform: scale(1.06) rotate(-7deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(-6deg);
+  }
+}
+
+@keyframes card-thud {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  20% {
+    transform: translate(-3px, 2px) rotate(-0.4deg);
+  }
+  45% {
+    transform: translate(3px, -1px) rotate(0.3deg);
+  }
+  70% {
+    transform: translate(-1px, 1px) rotate(-0.1deg);
+  }
+}
+
+/* Idle nudge: long rest, then a quick wiggle so the CTA gets noticed
+   without constantly moving. */
+@keyframes nudge {
+  0%,
+  86%,
+  100% {
+    transform: rotate(0deg) scale(1);
+  }
+  89% {
+    transform: rotate(-4deg) scale(1.05);
+  }
+  92% {
+    transform: rotate(3deg) scale(1.05);
+  }
+  95% {
+    transform: rotate(-1.5deg) scale(1.02);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .motion-pop {
+    animation: pop-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    animation-delay: var(--delay, 0ms);
+  }
+
+  .motion-rise {
+    animation: rise-in 0.7s cubic-bezier(0.34, 1.4, 0.64, 1) both;
+    animation-delay: var(--delay, 0ms);
+  }
+
+  .motion-swipe {
+    transform-origin: left center;
+    animation: swipe-in 0.55s cubic-bezier(0.65, 0, 0.35, 1) both;
+    animation-delay: var(--delay, 0ms);
+  }
+
+  .motion-status {
+    animation: status-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+
+  .motion-progress {
+    transform-origin: left center;
+    animation: progress-crawl var(--duration, 18s) cubic-bezier(0.3, 0.55, 0.5, 1)
+      both;
+  }
+
+  .motion-scan-line {
+    animation: scan-sweep 2.4s ease-in-out infinite;
+  }
+
+  .motion-skeleton {
+    animation: skeleton-pulse 1.4s ease-in-out infinite;
+    animation-delay: var(--delay, 0ms);
+  }
+
+  .motion-stamp {
+    animation: stamp-slam 0.55s cubic-bezier(0.34, 1.3, 0.64, 1) both;
+    animation-delay: var(--delay, 0ms);
+  }
+
+  .motion-thud {
+    animation: card-thud 0.35s ease-out both;
+    animation-delay: var(--delay, 0ms);
+  }
+
+  .motion-nudge {
+    animation: nudge 5s ease-in-out infinite;
+    animation-delay: var(--delay, 2.5s);
+  }
+
+  /* Squishy press for primary buttons — hover lift stays on the element. */
+  .squish-press:active:not(:disabled) {
+    transform: translateY(3px) scale(1.03, 0.94) !important;
+    box-shadow: 1px 1px 0 var(--ink) !important;
+    transition-duration: 60ms;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .motion-stamp {
+    transform: rotate(-6deg);
+  }
+}
+
 /* Goofy comic card hovers
    Hitbox (.goof-hit / .goof-stamp / .goof-faq / .goof-price) stays put.
    Only the face (.goof-face) moves — prevents hover flicker at edges. */

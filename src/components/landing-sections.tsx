@@ -12,7 +12,7 @@ const STEPS = [
   {
     n: "01",
     title: "Paste a URL",
-    body: "No account needed. First sniff stays in your browser.",
+    body: "No account needed. The first sniff is free.",
     rot: "-2deg",
     bg: "var(--accent)",
   },
@@ -26,7 +26,7 @@ const STEPS = [
   {
     n: "03",
     title: "Unlock the fix kit",
-    body: `Sign up, pay ${siteLegal.priceLabel} — or post your score on X and get the full review free.`,
+    body: `Pay ${siteLegal.priceLabel}, no account needed — or log in, post your score on X and get the full review free.`,
     rot: "-1deg",
     bg: "var(--accent-2)",
   },
@@ -43,7 +43,7 @@ const SNIFFS = [
 const FAQS = [
   {
     q: "Do I need an account for the first check?",
-    a: "Nope. Paste a URL, sniff for free. Sign up when you want to save or unlock.",
+    a: `Nope — not for the free check and not for the ${siteLegal.priceLabel} review either. An account is only needed to keep a scan history or unlock free via X.`,
   },
   {
     q: "What do I get for €5?",

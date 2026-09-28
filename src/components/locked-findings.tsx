@@ -11,15 +11,27 @@ const PLACEHOLDER_LINES = [
   "Mobile nav collapses into a generic hamburger stack.",
 ];
 
-export function LockedFindings({ count }: { count: number }) {
+export function LockedFindings({
+  count,
+  revealDelayMs,
+}: {
+  count: number;
+  /** When set, the placeholders stagger in starting at this delay. */
+  revealDelayMs?: number;
+}) {
   const lines = PLACEHOLDER_LINES.slice(0, Math.max(1, Math.min(count, 6)));
 
   return (
     <div className="relative mt-3 space-y-2" aria-hidden>
-      {lines.map((line) => (
+      {lines.map((line, i) => (
         <p
           key={line}
-          className="rounded-2xl border-[3px] border-[var(--ink)]/30 bg-[var(--bg)] px-4 py-3 text-sm font-semibold text-[var(--ink)] blur-[6px] select-none"
+          style={
+            revealDelayMs === undefined
+              ? undefined
+              : { ["--delay" as string]: `${revealDelayMs + i * 80}ms` }
+          }
+          className={`${revealDelayMs === undefined ? "" : "motion-rise"} rounded-2xl border-[3px] border-[var(--ink)]/30 bg-[var(--bg)] px-4 py-3 text-sm font-semibold text-[var(--ink)] blur-[6px] select-none`}
         >
           {line}
         </p>
