@@ -1,6 +1,7 @@
 import { ClerkProvider } from "@clerk/nextjs";
 import { Fredoka, Nunito } from "next/font/google";
 import { GuestScanSync } from "@/components/guest-scan-sync";
+import { HalftoneBackground } from "@/components/halftone-background";
 import { Providers } from "@/components/providers";
 import { ConditionalSiteFooter } from "@/components/conditional-site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -28,11 +29,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${display.variable} ${body.variable} min-h-full`}>
+    <html
+      lang="en"
+      className={`${display.variable} ${body.variable} min-h-full`}
+    >
       <body className="min-h-full antialiased">
         <ClerkProvider appearance={clerkAppearance}>
           <Providers>
             <GuestScanSync />
+            <HalftoneBackground />
             <div className="relative z-0 flex min-h-full flex-col">
               <SiteHeader />
               <main className="flex-1">{children}</main>
