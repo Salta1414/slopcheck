@@ -158,8 +158,8 @@ export const createCreditCheckout = action({
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       line_items: [{ price, quantity: 1 }],
-      success_url: `${appUrl()}/developers?credits=1`,
-      cancel_url: `${appUrl()}/developers`,
+      success_url: `${appUrl()}/home/credits?paid=1`,
+      cancel_url: `${appUrl()}/home/credits`,
       customer_email: identity.email ?? undefined,
       client_reference_id: userId,
       metadata: {

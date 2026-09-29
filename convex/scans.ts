@@ -73,6 +73,8 @@ export const listMine = query({
       score: v.optional(v.number()),
       verdict: v.optional(verdictValidator),
       teaserFlags: v.optional(v.array(v.string())),
+      /** Started through the API / MCP server. */
+      viaApi: v.boolean(),
       createdAt: v.number(),
     }),
   ),
@@ -96,6 +98,7 @@ export const listMine = query({
       score: scan.score,
       verdict: scan.verdict,
       teaserFlags: scan.teaserFlags,
+      viaApi: scan.apiKeyId !== undefined,
       createdAt: scan.createdAt,
     }));
   },

@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  SignInButton,
-  SignUpButton,
-  Show,
-  UserButton,
-} from "@clerk/nextjs";
+import { SignInButton, SignUpButton, Show, UserButton } from "@clerk/nextjs";
 import Image from "next/image";
 import Link from "next/link";
 import { clerkAppearance } from "@/lib/clerk-appearance";
@@ -43,12 +38,12 @@ export function SiteHeader() {
           API
         </Link>
         <Show when="signed-in">
-          <a
-            href="/scans"
+          <Link
+            href="/home"
             className="rounded-full border-[3px] border-[var(--ink)] bg-white px-4 py-2 text-sm font-extrabold text-[var(--ink)] shadow-[3px_3px_0_var(--ink)] transition hover:translate-y-[1px] hover:shadow-[2px_2px_0_var(--ink)]"
           >
-            Scans
-          </a>
+            Home
+          </Link>
         </Show>
         <Show when="signed-out">
           <SignInButton mode="modal">

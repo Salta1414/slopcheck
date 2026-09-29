@@ -47,6 +47,13 @@ export const overview = query({
           lastUsedAt: v.optional(v.number()),
         }),
       ),
+      purchases: v.array(
+        v.object({
+          _id: v.id("creditPurchases"),
+          credits: v.number(),
+          paidAt: v.number(),
+        }),
+      ),
     }),
     v.null(),
   ),
@@ -56,6 +63,11 @@ export const overview = query({
     const keys = await ctx.db
       .query("apiKeys")
       .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .take(50);
+    const purchases = await ctx.db
+      .query("creditPurchases")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .order("desc")
       .take(50);
     return {
       credits: user.apiCredits ?? 0,
@@ -68,6 +80,11 @@ export const overview = query({
           createdAt: k.createdAt,
           lastUsedAt: k.lastUsedAt,
         })),
+      purchases: purchases.flatMap((p) =>
+        p.status === "paid" && p.paidAt !== undefined
+          ? [{ _id: p._id, credits: p.credits, paidAt: p.paidAt }]
+          : [],
+      ),
     };
   },
 });
@@ -190,7 +207,7 @@ export const startReview = internalMutation({
     const credits = user.apiCredits ?? 0;
     if (credits < 1) {
       throw new Error(
-        "No API credits left. Buy more at " + appUrl() + "/developers",
+        "No API credits left. Buy more at " + appUrl() + "/home/credits",
       );
     }
 

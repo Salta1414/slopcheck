@@ -62,10 +62,10 @@ export async function authenticate(
 
 export const MISSING_KEY_MESSAGE =
   "This needs a Slopcheck API key. Create one at " +
-  "https://slopcheck.dev/developers and send it as `Authorization: Bearer slop_…`.";
+  "https://slopcheck.dev/home/keys and send it as `Authorization: Bearer slop_…`.";
 
 export const INVALID_KEY_MESSAGE =
-  "That API key is not valid (revoked or mistyped). Create a new one at https://slopcheck.dev/developers.";
+  "That API key is not valid (revoked or mistyped). Create a new one at https://slopcheck.dev/home/keys.";
 
 // ---------------------------------------------------------------------------
 // Recipes

@@ -207,7 +207,7 @@ function OwnerStats({ now }: { now: number }) {
             Updated {formatDate(now)}
           </p>
           <Link
-            href="/scans"
+            href="/home"
             className="rounded-full border-[3px] border-[var(--ink)] bg-white px-4 py-2 text-sm font-extrabold shadow-[3px_3px_0_var(--ink)] transition hover:translate-y-[1px] hover:shadow-[2px_2px_0_var(--ink)]"
           >
             Open scans →

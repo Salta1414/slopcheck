@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ApiAccountPanel } from "@/components/api-account-panel";
+import { DeveloperAccountCard } from "@/components/developer-account-card";
 import { CodeBlock } from "@/components/code-block";
 
 export const metadata: Metadata = {
@@ -93,9 +93,13 @@ export default function DevelopersPage() {
       </p>
 
       <div
-        className="motion-rise mt-10 grid gap-6 lg:grid-cols-[1.3fr_1fr]"
+        className="motion-rise mt-10 grid gap-6 lg:grid-cols-[1fr_1.4fr]"
         style={{ ["--delay" as string]: "300ms" }}
       >
+        <section className="min-w-0">
+          <DeveloperAccountCard />
+        </section>
+
         <section className={card + " min-w-0"}>
           <h2 className={h2}>1 · Add the MCP server</h2>
           <CodeBlock label="Claude Code" code={CLAUDE_CODE} />
@@ -107,10 +111,6 @@ export default function DevelopersPage() {
             The recipe tools work without a key — drop the header if you only
             want those.
           </p>
-        </section>
-
-        <section className="min-w-0">
-          <ApiAccountPanel />
         </section>
       </div>
 

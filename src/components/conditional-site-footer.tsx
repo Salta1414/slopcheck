@@ -5,7 +5,7 @@ import { SiteFooter } from "@/components/site-footer";
 
 export function ConditionalSiteFooter() {
   const pathname = usePathname();
-  if (pathname?.startsWith("/scans")) {
+  if (pathname?.startsWith("/scans") || pathname?.startsWith("/home")) {
     return null;
   }
   return <SiteFooter />;
