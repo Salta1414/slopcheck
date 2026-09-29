@@ -16,10 +16,13 @@ import {
   type Scoring,
 } from "./lib/rubric";
 import { parseKit, type DesignKit } from "./lib/kit";
-import { captureScreenshotBase64 } from "./lib/screenshots";
+import {
+  captureImageLabels,
+  captureReviewFrames,
+  captureScreenshotBase64,
+} from "./lib/screenshots";
 import { PRIVATE_HOST_RE } from "./lib/url";
 import type { Id } from "./_generated/dataModel";
-
 
 type Finding = {
   area: string;
@@ -132,32 +135,17 @@ export const runFullReview = internalAction({
         throw new Error("That URL cannot be reviewed");
       }
 
-      let desktopBase64: string | null = null;
-      let screenshotStorageId = scan.screenshotStorageId;
+      // Fresh frames from one browser session: hero, a moment later, after a scroll.
+      const desktop = await captureReviewFrames(scan.normalizedUrl);
+      const screenshotStorageId = await ctx.storage.store(
+        new Blob([new Uint8Array(Buffer.from(desktop.base64, "base64"))], {
+          type: "image/png",
+        }),
+      );
       let mobileScreenshotStorageId: Id<"_storage"> | undefined;
 
-      if (scan.screenshotStorageId) {
-        const blob = await ctx.storage.get(scan.screenshotStorageId);
-        if (blob) {
-          desktopBase64 = Buffer.from(await blob.arrayBuffer()).toString(
-            "base64",
-          );
-        }
-      }
-
-      if (!desktopBase64) {
-        const desktop = await captureScreenshotBase64(scan.normalizedUrl, {
-          fullPage: true,
-          viewport: "desktop",
-        });
-        desktopBase64 = desktop.base64;
-        const bytes = Buffer.from(desktop.base64, "base64");
-        screenshotStorageId = await ctx.storage.store(
-          new Blob([new Uint8Array(bytes)], { type: "image/png" }),
-        );
-      }
-
-      const images: string[] = [desktopBase64];
+      const images: string[] = [...desktop.frames];
+      const labels = [...desktop.labels];
       let hasMobile = false;
 
       try {
@@ -166,30 +154,33 @@ export const runFullReview = internalAction({
           viewport: "mobile",
         });
         images.push(mobile.base64);
+        labels.push("Mobile 390x844 viewport, separate session, still image");
         hasMobile = true;
         const mobileBytes = Buffer.from(mobile.base64, "base64");
         mobileScreenshotStorageId = await ctx.storage.store(
           new Blob([new Uint8Array(mobileBytes)], { type: "image/png" }),
         );
       } catch (mobileError) {
-        console.error("Mobile screenshot failed; continuing with desktop only", {
-          scanId: args.scanId,
-          error:
-            mobileError instanceof Error
-              ? mobileError.message
-              : "unknown mobile capture error",
-        });
+        console.error(
+          "Mobile screenshot failed; continuing with desktop only",
+          {
+            scanId: args.scanId,
+            error:
+              mobileError instanceof Error
+                ? mobileError.message
+                : "unknown mobile capture error",
+          },
+        );
       }
 
       const model = fullReviewModel();
       const userText = [
         "Full UI slop review.",
         `URL: ${scan.normalizedUrl}`,
-        `Preeval estimate: ${scan.estimatedScore ?? "n/a"}`,
-        `Preeval verdict: ${scan.verdict ?? "n/a"}`,
+        captureImageLabels(labels),
         hasMobile
-          ? "Images in order: (1) Desktop 1440×900, (2) Mobile 390×844. Review both."
-          : "Only the desktop screenshot is available (mobile capture failed).",
+          ? "Review desktop and mobile."
+          : "Mobile capture failed: note the missing mobile coverage.",
       ].join("\n");
 
       // The customer already paid, so give a flaky model reply one more shot

@@ -10,7 +10,7 @@ import {
 } from "./lib/openrouter";
 import { buildPreevalResult } from "./lib/preeval";
 import { PREEVAL_SYSTEM_PROMPT } from "./lib/rubric";
-import { captureDesktopScreenshotBase64 } from "./lib/screenshots";
+import { captureImageLabels, captureReviewFrames } from "./lib/screenshots";
 
 const resultValidator = v.object({
   url: v.string(),
@@ -61,15 +61,15 @@ export const runGolden = internalAction({
     for (const site of sites) {
       const expected = `${site.min}–${site.max}`;
       try {
-        const shot = await captureDesktopScreenshotBase64(site.url);
+        const shot = await captureReviewFrames(site.url);
         const scores: number[] = [];
         const tells: string[][] = [];
         for (let i = 0; i < runs; i++) {
           const content = await openRouterVisionJson({
             model,
             system: PREEVAL_SYSTEM_PROMPT,
-            userText: `Evaluate this website UI screenshot for AI slop.\nURL: ${site.url}`,
-            imagesBase64Png: [shot.base64],
+            userText: `Evaluate this website UI for AI slop.\nURL: ${site.url}\n${captureImageLabels(shot.labels)}`,
+            imagesBase64Png: shot.frames,
           });
           const result = buildPreevalResult(parseJsonObject(content));
           scores.push(result.estimatedScore);

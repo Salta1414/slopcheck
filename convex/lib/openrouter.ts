@@ -10,13 +10,11 @@ export function requireOpenRouterKey(): string {
 
 export function preevalModel(): string {
   // Fast vision default for free teaser scans — override via OPENROUTER_PREEVAL_MODEL
-  return process.env.OPENROUTER_PREEVAL_MODEL ?? "google/gemini-3.6-flash";
+  return process.env.OPENROUTER_PREEVAL_MODEL ?? "z-ai/glm-5.3-flash";
 }
 
 export function fullReviewModel(): string {
-  return (
-    process.env.OPENROUTER_FULL_MODEL ?? "anthropic/claude-opus-5"
-  );
+  return process.env.OPENROUTER_FULL_MODEL ?? "anthropic/claude-fable-5.1";
 }
 
 type OpenRouterContentPart =
@@ -24,9 +22,7 @@ type OpenRouterContentPart =
   | { type: "image_url"; image_url: { url: string } };
 
 type OpenRouterMessageContent =
-  | string
-  | null
-  | Array<{ type?: string; text?: string }>;
+  string | null | Array<{ type?: string; text?: string }>;
 
 type OpenRouterChoice = {
   finish_reason?: string | null;
@@ -73,8 +69,11 @@ async function callOpenRouterVision(args: {
     },
     body: JSON.stringify({
       model: args.model,
-      // Scoring should be repeatable, not creative.
-      temperature: 0,
+      // Deterministic scoring where the route supports it; Fable does not
+      // advertise temperature, so let that route use its default.
+      ...(args.model === "anthropic/claude-fable-5.1"
+        ? {}
+        : { temperature: 0 }),
       ...(args.useJsonObjectFormat
         ? { response_format: { type: "json_object" } }
         : {}),

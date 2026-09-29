@@ -15,7 +15,7 @@ import {
   RUBRIC_VERSION,
   type SlopVerdict,
 } from "./lib/rubric";
-import { captureDesktopScreenshotBase64 } from "./lib/screenshots";
+import { captureImageLabels, captureReviewFrames } from "./lib/screenshots";
 import { normalizeAndValidateUrl } from "./lib/url";
 
 export const runPreeval = action({
@@ -40,7 +40,10 @@ export const runPreeval = action({
     createdAt: v.number(),
     scanId: v.id("scans"),
   }),
-  handler: async (ctx, args): Promise<{
+  handler: async (
+    ctx,
+    args,
+  ): Promise<{
     guestKey: string;
     url: string;
     normalizedUrl: string;
@@ -117,10 +120,7 @@ export const runPreeval = action({
     });
 
     try {
-      const shot = await captureDesktopScreenshotBase64(normalizedUrl, {
-        fullPage: false,
-      });
-      // Note: we wait ~3.5s + networkidle so lazy heroes/media can paint before scoring.
+      const shot = await captureReviewFrames(normalizedUrl);
 
       const bytes = Buffer.from(shot.base64, "base64");
       const storageId: Id<"_storage"> = await ctx.storage.store(
@@ -137,8 +137,8 @@ export const runPreeval = action({
       const content = await openRouterVisionJson({
         model,
         system: PREEVAL_SYSTEM_PROMPT,
-        userText: `Evaluate this website UI screenshot for AI slop.\nURL: ${normalizedUrl}\nHost: ${host}`,
-        imagesBase64Png: [shot.base64],
+        userText: `Evaluate this website UI for AI slop.\nURL: ${normalizedUrl}\nHost: ${host}\n${captureImageLabels(shot.labels)}`,
+        imagesBase64Png: shot.frames,
       });
 
       const parsed = buildPreevalResult(parseJsonObject(content));
@@ -174,8 +174,7 @@ export const runPreeval = action({
         scanId,
       };
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Preeval failed";
+      const message = error instanceof Error ? error.message : "Preeval failed";
 
       await ctx.runMutation(internal.scanInternal.upsertGuestPreeval, {
         ...base,
