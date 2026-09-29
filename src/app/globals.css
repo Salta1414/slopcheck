@@ -42,8 +42,8 @@ body::before {
   background-color: var(--bg);
   background-image: radial-gradient(
     circle,
-    rgb(26 21 35 / 0.1) 0 0.9px,
-    transparent 1.2px
+    rgb(26 21 35 / 0.2) 0 1.25px,
+    transparent 1.6px
   );
   background-size: 18px 18px;
 }

@@ -3,18 +3,19 @@
 import { useEffect, useRef } from "react";
 
 /**
- * Comic-print backdrop: a halftone dot grid that grows and takes on the brand
- * colors toward the corners, calm in the middle so text stays readable.
- * With a fine pointer, a "sniffing" lens follows the cursor — dots under it
- * swell, push outward and saturate. Static for touch and reduced motion.
+ * Comic-print backdrop: an even dot grid, softly tinted with the brand colors
+ * toward the corners. With a fine pointer the dots near the cursor lean
+ * gently toward it. Static for touch and reduced motion.
  */
 
 const SPACING = 18;
-const LENS_RADIUS = 170;
+const DOT_RADIUS = 1.25;
+const PULL_RADIUS = 200;
+/** Max share of the distance a dot moves toward the cursor. */
+const PULL = 0.3;
 
 type Rgb = [number, number, number];
 const INK: Rgb = [26, 21, 35];
-const LENS_COLOR: Rgb = [46, 230, 166];
 // Corner colors: top-left mint, top-right pink, bottom-right yellow, bottom-left mint.
 const CORNERS: { x: number; y: number; color: Rgb }[] = [
   { x: 0, y: 0, color: [46, 230, 166] },
@@ -42,10 +43,10 @@ export function HalftoneBackground() {
     let width = 0;
     let height = 0;
     let frame = 0;
-    // Lens state: target follows the pointer, current eases toward it.
-    const lens = { x: -9999, y: -9999, tx: -9999, ty: -9999, k: 0, tk: 0 };
+    // Cursor state: target follows the pointer, current eases toward it.
+    const cursor = { x: -9999, y: -9999, tx: -9999, ty: -9999, k: 0, tk: 0 };
 
-    function lensEnabled() {
+    function pullEnabled() {
       return finePointer.matches && !reduceMotion.matches;
     }
 
@@ -62,10 +63,6 @@ export function HalftoneBackground() {
     function draw() {
       ctx!.clearRect(0, 0, width, height);
       const diag = Math.hypot(width, height);
-      // Phones: smaller, tighter corners so the hero text stays calm.
-      const small = width < 640;
-      const reach = small ? width * 0.55 : diag * 0.42;
-      const maxGrow = small ? 2.2 : 3.4;
       const cols = Math.ceil(width / SPACING) + 1;
       const rows = Math.ceil(height / SPACING) + 1;
 
@@ -76,7 +73,7 @@ export function HalftoneBackground() {
           let x = col * SPACING + shift;
           let y = row * SPACING;
 
-          // Distance to the nearest corner drives size and color.
+          // Same size everywhere; only the color drifts toward the nearest corner.
           let nearest = CORNERS[0];
           let nearestD = Infinity;
           for (const c of CORNERS) {
@@ -86,65 +83,43 @@ export function HalftoneBackground() {
               nearest = c;
             }
           }
-          const edge = smoothstep(1 - nearestD / reach);
-          let radius = 0.55 + edge * maxGrow;
-          let tint = edge;
-          let alpha = 0.1 + edge * 0.5;
+          const tint = smoothstep(1 - nearestD / (diag * 0.45)) * 0.85;
 
-          let color = nearest.color;
-          if (lens.k > 0.001) {
-            const dx = x - lens.x;
-            const dy = y - lens.y;
+          if (cursor.k > 0.001) {
+            const dx = cursor.x - x;
+            const dy = cursor.y - y;
             const d = Math.hypot(dx, dy);
-            if (d < LENS_RADIUS) {
-              // Magnifier: dots swell most at the center and take the lens color.
-              const f = (1 - d / LENS_RADIUS) ** 1.4 * lens.k;
-              // Slight barrel bulge, strongest mid-radius so the center stays full.
-              const bulge = Math.sin((d / LENS_RADIUS) * Math.PI) * 5 * lens.k;
-              if (d > 0.01) {
-                x += (dx / d) * bulge;
-                y += (dy / d) * bulge;
-              }
-              radius = radius * (1 - f) + (radius + 4.6) * f;
-              color = LENS_COLOR;
-              tint = tint * (1 - f) + f;
-              alpha = alpha * (1 - f) + 0.9 * f;
+            if (d < PULL_RADIUS && d > 0.01) {
+              // Lean toward the cursor; strongest a little way out, zero at
+              // the edge, never overshooting the cursor itself.
+              const m = d * PULL * (1 - d / PULL_RADIUS) ** 2 * cursor.k;
+              x += (dx / d) * m;
+              y += (dy / d) * m;
             }
           }
 
-          if (radius < 0.5) continue;
           const [r, g, b] = [0, 1, 2].map((i) =>
-            Math.round(INK[i] + (color[i] - INK[i]) * tint),
+            Math.round(INK[i] + (nearest.color[i] - INK[i]) * tint),
           );
+          const alpha = 0.2 + tint * 0.3;
           ctx!.fillStyle = `rgb(${r} ${g} ${b} / ${alpha.toFixed(3)})`;
           ctx!.beginPath();
-          ctx!.arc(x, y, radius, 0, Math.PI * 2);
+          ctx!.arc(x, y, DOT_RADIUS, 0, Math.PI * 2);
           ctx!.fill();
         }
-      }
-
-      if (lens.k > 0.02) {
-        // Comic magnifier rim.
-        ctx!.lineWidth = 2.5;
-        ctx!.strokeStyle = `rgb(26 21 35 / ${(0.55 * lens.k).toFixed(3)})`;
-        ctx!.setLineDash([10, 7]);
-        ctx!.beginPath();
-        ctx!.arc(lens.x, lens.y, LENS_RADIUS * 0.96, 0, Math.PI * 2);
-        ctx!.stroke();
-        ctx!.setLineDash([]);
       }
     }
 
     function tick() {
       frame = 0;
-      lens.x += (lens.tx - lens.x) * 0.18;
-      lens.y += (lens.ty - lens.y) * 0.18;
-      lens.k += (lens.tk - lens.k) * 0.12;
+      cursor.x += (cursor.tx - cursor.x) * 0.18;
+      cursor.y += (cursor.ty - cursor.y) * 0.18;
+      cursor.k += (cursor.tk - cursor.k) * 0.12;
       draw();
       const settling =
-        Math.abs(lens.tx - lens.x) > 0.3 ||
-        Math.abs(lens.ty - lens.y) > 0.3 ||
-        Math.abs(lens.tk - lens.k) > 0.005;
+        Math.abs(cursor.tx - cursor.x) > 0.3 ||
+        Math.abs(cursor.ty - cursor.y) > 0.3 ||
+        Math.abs(cursor.tk - cursor.k) > 0.005;
       if (settling) frame = requestAnimationFrame(tick);
     }
 
@@ -154,27 +129,27 @@ export function HalftoneBackground() {
 
     function onPointerMove(e: PointerEvent) {
       if (e.pointerType !== "mouse" && e.pointerType !== "pen") return;
-      if (!lensEnabled()) return;
-      if (lens.tk === 0) {
-        // Enter: start the lens at the pointer instead of sliding in from afar.
-        lens.x = e.clientX;
-        lens.y = e.clientY;
+      if (!pullEnabled()) return;
+      if (cursor.tk === 0) {
+        // Enter: start at the pointer instead of sliding in from afar.
+        cursor.x = e.clientX;
+        cursor.y = e.clientY;
       }
-      lens.tx = e.clientX;
-      lens.ty = e.clientY;
-      lens.tk = 1;
+      cursor.tx = e.clientX;
+      cursor.ty = e.clientY;
+      cursor.tk = 1;
       schedule();
     }
 
     function onPointerLeave() {
-      lens.tk = 0;
+      cursor.tk = 0;
       schedule();
     }
 
     function onPreferenceChange() {
-      if (!lensEnabled()) {
-        lens.tk = 0;
-        lens.k = 0;
+      if (!pullEnabled()) {
+        cursor.tk = 0;
+        cursor.k = 0;
       }
       draw();
     }
