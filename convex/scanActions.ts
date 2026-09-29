@@ -18,6 +18,17 @@ import {
 import { captureImageLabels, captureReviewFrames } from "./lib/screenshots";
 import { normalizeAndValidateUrl } from "./lib/url";
 
+/** Blurred placeholder rows for older frontends — the real text stays server-side. */
+function legacyLocked(count: number) {
+  return {
+    lockedFindings: Array.from(
+      { length: count },
+      () => "Unlock the full review to see this finding.",
+    ),
+    lockedPrompts: ["Unlock the full review to get your design kit."],
+  };
+}
+
 export const runPreeval = action({
   args: {
     url: v.string(),
@@ -37,6 +48,12 @@ export const runPreeval = action({
     teaserFlags: v.array(v.string()),
     /** Locked findings stay server-side; the client only renders placeholders. */
     lockedCount: v.number(),
+    /**
+     * Deprecated: placeholders only, for frontends deployed before lockedCount
+     * existed. Never contains real findings.
+     */
+    lockedFindings: v.array(v.string()),
+    lockedPrompts: v.array(v.string()),
     createdAt: v.number(),
     scanId: v.id("scans"),
   }),
@@ -51,6 +68,8 @@ export const runPreeval = action({
     verdict: SlopVerdict;
     teaserFlags: string[];
     lockedCount: number;
+    lockedFindings: string[];
+    lockedPrompts: string[];
     createdAt: number;
     scanId: Id<"scans">;
   }> => {
@@ -109,6 +128,7 @@ export const runPreeval = action({
         verdict: reservation.verdict,
         teaserFlags: reservation.teaserFlags,
         lockedCount: reservation.lockedFindings.length,
+        ...legacyLocked(reservation.lockedFindings.length),
         createdAt,
         scanId,
       };
@@ -170,6 +190,7 @@ export const runPreeval = action({
         verdict: parsed.verdict,
         teaserFlags: parsed.teaserFlags,
         lockedCount: parsed.lockedFindings.length,
+        ...legacyLocked(parsed.lockedFindings.length),
         createdAt,
         scanId,
       };

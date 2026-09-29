@@ -130,7 +130,11 @@ export const getMine = query({
           findings: v.array(findingValidator),
           prompts: v.array(promptValidator),
           tells: v.array(
-            v.object({ id: v.string(), label: v.string(), evidence: v.string() }),
+            v.object({
+              id: v.string(),
+              label: v.string(),
+              evidence: v.string(),
+            }),
           ),
           tellsChecked: v.number(),
           kit: v.union(designKitValidator, v.null()),
@@ -208,7 +212,12 @@ export const getMine = query({
  */
 export const claimGuestScans = mutation({
   args: {
-    guestKeys: v.array(v.string()),
+    guestKeys: v.optional(v.array(v.string())),
+    /**
+     * Deprecated payload from frontends before guestKeys existed. Only the
+     * guestKey of each entry is read — the rest is client data we don't trust.
+     */
+    scans: v.optional(v.array(v.any())),
   },
   returns: v.object({
     claimed: v.number(),
@@ -219,7 +228,12 @@ export const claimGuestScans = mutation({
     const now = Date.now();
     const scanIds = [];
 
-    for (const guestKey of args.guestKeys.slice(0, 20)) {
+    const guestKeys =
+      args.guestKeys ??
+      (args.scans ?? [])
+        .map((scan: { guestKey?: unknown }) => scan?.guestKey)
+        .filter((key): key is string => typeof key === "string");
+    for (const guestKey of guestKeys.slice(0, 20)) {
       if (guestKey.length < 8) continue;
 
       const scan = await ctx.db
