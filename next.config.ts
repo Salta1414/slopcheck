@@ -13,6 +13,15 @@ function convexSiteUrl(): string | null {
   return cloud.replace(/\/$/, "").replace(/\.convex\.cloud$/, ".convex.site");
 }
 
+// Without it the app renders no Convex provider and prerendering crashes with
+// "Could not find Convex client". Fail with the actual cause instead.
+if (process.env.VERCEL && !process.env.NEXT_PUBLIC_CONVEX_URL) {
+  throw new Error(
+    `NEXT_PUBLIC_CONVEX_URL is not set for this Vercel environment (${process.env.VERCEL_ENV}). ` +
+      "Add it (and the Clerk keys) under Project → Settings → Environment Variables.",
+  );
+}
+
 const nextConfig: NextConfig = {
   async rewrites() {
     const site = convexSiteUrl();
