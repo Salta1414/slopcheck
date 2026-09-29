@@ -156,6 +156,8 @@ export function HalftoneBackground() {
 
     resize();
     canvas.dataset.ready = "1";
+    // The canvas replaces the static CSS dot screen — never show both.
+    document.documentElement.dataset.halftone = "1";
     window.addEventListener("resize", resize);
     window.addEventListener("pointermove", onPointerMove, { passive: true });
     document.documentElement.addEventListener("pointerleave", onPointerLeave);
@@ -163,6 +165,7 @@ export function HalftoneBackground() {
     finePointer.addEventListener("change", onPreferenceChange);
 
     return () => {
+      delete document.documentElement.dataset.halftone;
       cancelAnimationFrame(frame);
       window.removeEventListener("resize", resize);
       window.removeEventListener("pointermove", onPointerMove);

@@ -48,6 +48,10 @@ body::before {
   background-size: 18px 18px;
 }
 
+html[data-halftone] body::before {
+  background-image: none;
+}
+
 .halftone-canvas {
   position: fixed;
   inset: 0;
