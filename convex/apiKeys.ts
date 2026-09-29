@@ -18,11 +18,6 @@ const MAX_ACTIVE_KEYS = 5;
 const HOUR_MS = 60 * 60 * 1000;
 const DEFAULT_API_HOURLY_LIMIT = 20;
 
-function trialCredits(): number {
-  const raw = Number(process.env.API_TRIAL_CREDITS ?? 1);
-  return Number.isFinite(raw) && raw >= 0 ? Math.floor(raw) : 1;
-}
-
 function apiHourlyLimit(): number {
   const raw = Number(process.env.API_HOURLY_LIMIT);
   return Number.isFinite(raw) && raw > 0
@@ -117,15 +112,6 @@ export const insertKey = internalMutation({
       throw new Error(
         `You can have ${MAX_ACTIVE_KEYS} active keys. Revoke one first.`,
       );
-    }
-
-    // First key ever: a free trial credit so the MCP server can be tried for real.
-    const user = await ctx.db.get(args.userId);
-    if (user && user.apiTrialGrantedAt === undefined) {
-      await ctx.db.patch(args.userId, {
-        apiCredits: (user.apiCredits ?? 0) + trialCredits(),
-        apiTrialGrantedAt: Date.now(),
-      });
     }
 
     return await ctx.db.insert("apiKeys", {

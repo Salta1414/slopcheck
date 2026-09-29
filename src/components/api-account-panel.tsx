@@ -20,8 +20,8 @@ export function ApiAccountPanel() {
             Get an API key
           </h2>
           <p className="mt-2 font-semibold text-[var(--ink)]/70">
-            Recipes are free without a key. Reviews need an account — your first
-            key comes with a free review credit.
+            Recipes are free without a key. Reviews need an account and credits
+            (10 reviews for €29).
           </p>
           <SignInButton mode="modal">
             <button
@@ -149,7 +149,7 @@ function SignedInPanel() {
       </h3>
       {overview.keys.length === 0 ? (
         <p className="mt-2 font-semibold text-[var(--ink)]/70">
-          No keys yet. Your first key comes with a free review credit.
+          No keys yet. Create one, then add credits to run reviews.
         </p>
       ) : (
         <ul className="mt-2 divide-y-[2px] divide-[var(--ink)]/10">

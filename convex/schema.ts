@@ -11,8 +11,6 @@ export default defineSchema({
     imageUrl: v.optional(v.string()),
     /** Prepaid full reviews for the API / MCP server. */
     apiCredits: v.optional(v.number()),
-    /** Set once the one-time trial credit was granted. */
-    apiTrialGrantedAt: v.optional(v.number()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })

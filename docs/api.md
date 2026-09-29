@@ -11,8 +11,8 @@ explicitly with `CONVEX_SITE_URL` at build time.
 - Keys: `slop_` + 40 hex, created on `/developers` (max 5 active per account).
   Only the sha256 is stored (`apiKeys.keyHash`); the key is shown once.
 - Send as `Authorization: Bearer slop_…` (or `X-API-Key`).
-- `users.apiCredits`: 1 credit = 1 full review. The first key grants
-  `API_TRIAL_CREDITS` (default 1) once.
+- `users.apiCredits`: 1 credit = 1 full review. No free credits —
+  multi-account farming would cost real money. Pack: 10 credits for €29.
 - A failed review refunds its credit (`apiKeys.runApiReview`).
 - Rate limit: `API_HOURLY_LIMIT` reviews per key per hour (default 20).
 - Credit packs: Stripe Checkout with `STRIPE_PRICE_API_CREDITS`, granting
