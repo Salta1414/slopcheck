@@ -133,6 +133,54 @@ export const createCheckoutSession = action({
   },
 });
 
+function creditsPerPack(): number {
+  const raw = Number(process.env.STRIPE_API_CREDITS_PER_PACK ?? 10);
+  return Number.isFinite(raw) && raw > 0 ? Math.floor(raw) : 10;
+}
+
+/** Stripe Checkout for a pack of API credits (signed-in accounts only). */
+export const createCreditCheckout = action({
+  args: {},
+  returns: v.object({ url: v.string() }),
+  handler: async (ctx): Promise<{ url: string }> => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Not authenticated");
+    const price = process.env.STRIPE_PRICE_API_CREDITS;
+    if (!price) {
+      throw new Error("STRIPE_PRICE_API_CREDITS is not set on Convex");
+    }
+    const userId: Id<"users"> = await ctx.runMutation(
+      internal.users.ensureUserInternal,
+      {},
+    );
+    const credits = creditsPerPack();
+    const stripe = requireStripe();
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      line_items: [{ price, quantity: 1 }],
+      success_url: `${appUrl()}/developers?credits=1`,
+      cancel_url: `${appUrl()}/developers`,
+      customer_email: identity.email ?? undefined,
+      client_reference_id: userId,
+      metadata: {
+        kind: "api_credits",
+        userId,
+        credits: String(credits),
+      },
+      managed_payments: { enabled: false },
+    });
+    if (!session.url) {
+      throw new Error("Stripe did not return a checkout URL");
+    }
+    await ctx.runMutation(internal.apiKeys.createCreditPurchase, {
+      userId,
+      stripeSessionId: session.id,
+      credits,
+    });
+    return { url: session.url };
+  },
+});
+
 /**
  * Verify Stripe signature (Node) then process checkout.session.completed.
  */
@@ -157,6 +205,13 @@ export const verifyAndHandleWebhook = internalAction({
 
     if (event.type === "checkout.session.completed") {
       const session = event.data.object as Stripe.Checkout.Session;
+      if (session.metadata?.kind === "api_credits") {
+        await ctx.runMutation(internal.apiKeys.markCreditPurchasePaid, {
+          stripeSessionId: session.id,
+          email: session.customer_details?.email ?? undefined,
+        });
+        return null;
+      }
       const scanId =
         session.metadata?.scanId ?? session.client_reference_id ?? undefined;
 

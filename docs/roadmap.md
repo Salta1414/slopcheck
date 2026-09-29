@@ -50,3 +50,11 @@
 ## Phase 5 — Growth
 
 - [ ] Packs / teams / hall of slop / extension
+
+## Phase 6 — API & MCP (see `docs/api.md`)
+
+- [x] API keys (hashed) + credits + one trial credit on `/developers`
+- [x] REST `/api/v1/recipes`, `/api/v1/reviews` via Convex HTTP actions, proxied by Next
+- [x] Stateless MCP server `/mcp` (list_recipes, get_recipe, review_site, get_review)
+- [ ] **You:** Stripe price for a credit pack → `npx convex env set STRIPE_PRICE_API_CREDITS <price>`
+- [ ] Test `claude mcp add` against production after `npx convex deploy`

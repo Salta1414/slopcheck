@@ -36,6 +36,12 @@ export function SiteHeader() {
         >
           Recipes
         </Link>
+        <Link
+          href="/developers"
+          className="hidden rounded-full px-3 py-2 text-sm font-extrabold text-[var(--ink)] underline decoration-[var(--accent)] decoration-[3px] underline-offset-4 transition hover:decoration-[var(--accent-2)] sm:inline-block"
+        >
+          API
+        </Link>
         <Show when="signed-in">
           <a
             href="/scans"

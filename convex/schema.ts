@@ -9,6 +9,10 @@ export default defineSchema({
     email: v.optional(v.string()),
     name: v.optional(v.string()),
     imageUrl: v.optional(v.string()),
+    /** Prepaid full reviews for the API / MCP server. */
+    apiCredits: v.optional(v.number()),
+    /** Set once the one-time trial credit was granted. */
+    apiTrialGrantedAt: v.optional(v.number()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
@@ -65,6 +69,8 @@ export default defineSchema({
       v.union(v.literal("api"), v.literal("screenshot")),
     ),
     xShareProof: v.optional(v.string()),
+    /** Started through the API with this key (paid with one credit). */
+    apiKeyId: v.optional(v.id("apiKeys")),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
@@ -72,7 +78,34 @@ export default defineSchema({
     .index("by_guest_key", ["guestKey"])
     .index("by_user_and_created", ["userId", "createdAt"])
     .index("by_created", ["createdAt"])
-    .index("by_normalized_url_and_created", ["normalizedUrl", "createdAt"]),
+    .index("by_normalized_url_and_created", ["normalizedUrl", "createdAt"])
+    .index("by_api_key_and_created", ["apiKeyId", "createdAt"]),
+
+  apiKeys: defineTable({
+    userId: v.id("users"),
+    name: v.string(),
+    /** sha256 hex of the full key — the key itself is shown once and never stored. */
+    keyHash: v.string(),
+    /** First characters, so people can tell keys apart. */
+    prefix: v.string(),
+    createdAt: v.number(),
+    lastUsedAt: v.optional(v.number()),
+    revokedAt: v.optional(v.number()),
+  })
+    .index("by_hash", ["keyHash"])
+    .index("by_user", ["userId"]),
+
+  creditPurchases: defineTable({
+    userId: v.id("users"),
+    stripeSessionId: v.string(),
+    credits: v.number(),
+    status: v.union(v.literal("created"), v.literal("paid")),
+    email: v.optional(v.string()),
+    createdAt: v.number(),
+    paidAt: v.optional(v.number()),
+  })
+    .index("by_stripe_session", ["stripeSessionId"])
+    .index("by_user", ["userId"]),
 
   xShareChallenges: defineTable({
     state: v.string(),

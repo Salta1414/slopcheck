@@ -17,10 +17,9 @@ import {
 } from "./lib/rubric";
 import { parseKit, type DesignKit } from "./lib/kit";
 import { captureScreenshotBase64 } from "./lib/screenshots";
+import { PRIVATE_HOST_RE } from "./lib/url";
 import type { Id } from "./_generated/dataModel";
 
-const PRIVATE_HOST_RE =
-  /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[0-1])\.|0\.0\.0\.0|::1|\[::1\])/i;
 
 type Finding = {
   area: string;
